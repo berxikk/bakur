@@ -6,7 +6,7 @@
  * Konum: public/i18n.js
  */
 
-const I18N = {
+export const I18N = {
   "tr": {
     "locale": "tr-TR",
     "superLig": "Süper Lig",
@@ -989,7 +989,7 @@ const I18N = {
   }
 };
 
-const CI18N = {
+export const CI18N = {
   "tr": {
     "navForum": "Forum",
     "login": "Giriş Yap",
@@ -1169,11 +1169,7 @@ const CI18N = {
     "cropRotate": "Döndür",
     "cropReset": "Sıfırla",
     "cropCancel": "Vazgeç",
-    "cropConfirm": "Kırp ve Onayla",
-    "actionFailed": "İşlem gerçekleştirilemedi.",
-    "fanFallback": "Amedsporlu",
-    "fanHandleFallback": "taraftar",
-    "removeComposerImage": "Görseli Kaldır"
+    "cropConfirm": "Kırp ve Onayla"
   },
   "ku": {
     "navForum": "Forum",
@@ -1354,11 +1350,7 @@ const CI18N = {
     "cropRotate": "Bizivirîne",
     "cropReset": "Vegerîne",
     "cropCancel": "Dev jê berde",
-    "cropConfirm": "Bibire û erê bike",
-    "actionFailed": "Çalakî nehat pêkanîn.",
-    "fanFallback": "Amedsporî",
-    "fanHandleFallback": "alîgir",
-    "removeComposerImage": "Wêne rake"
+    "cropConfirm": "Bibire û erê bike"
   },
   "en": {
     "navForum": "Forum",
@@ -1539,11 +1531,7 @@ const CI18N = {
     "cropRotate": "Rotate",
     "cropReset": "Reset",
     "cropCancel": "Cancel",
-    "cropConfirm": "Crop & Apply",
-    "actionFailed": "Action could not be performed.",
-    "fanFallback": "Amedspor Fan",
-    "fanHandleFallback": "fan",
-    "removeComposerImage": "Remove image"
+    "cropConfirm": "Crop & Apply"
   },
   "de": {
     "navForum": "Forum",
@@ -1724,18 +1712,14 @@ const CI18N = {
     "cropRotate": "Drehen",
     "cropReset": "Zurücksetzen",
     "cropCancel": "Abbrechen",
-    "cropConfirm": "Zuschneiden & Bestätigen",
-    "actionFailed": "Aktion konnte nicht ausgeführt werden.",
-    "fanFallback": "Amedspor-Fan",
-    "fanHandleFallback": "fan",
-    "removeComposerImage": "Bild entfernen"
+    "cropConfirm": "Zuschneiden & Bestätigen"
   }
 };
 
 /**
  * Universal key lookup across both app & community dictionaries
  */
-function getTranslation(key, currentLang) {
+export function getTranslation(key, currentLang) {
   const l = currentLang || (typeof localStorage !== 'undefined' ? localStorage.getItem('amed_lang') : 'tr') || 'tr';
   return (
     I18N[l]?.[key] ??
@@ -1749,7 +1733,7 @@ function getTranslation(key, currentLang) {
 /**
  * Automatically scans and translates every element in the DOM
  */
-function translateDocument(targetLang) {
+export function translateDocument(targetLang) {
   const l = targetLang || (typeof localStorage !== 'undefined' ? localStorage.getItem('amed_lang') : 'tr') || 'tr';
   document.documentElement.lang = l;
 
@@ -1786,6 +1770,4 @@ if (typeof window !== 'undefined') {
   window.translateDocument = translateDocument;
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { I18N, CI18N, getTranslation, translateDocument };
-}
+export default { I18N, CI18N, getTranslation, translateDocument };
