@@ -1961,6 +1961,61 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, { error: 'Banner yükleme özelliği devre dışı bırakılmıştır.' }, 403);
   }
 
+// Online Harici NSFW (+18 / Müstehcenlik) Denetim Servisi
+async function checkOnlineNSFW(buffer, ext) {
+  try {
+    const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
+    const fd = new FormData();
+    const blob = new Blob([buffer], { type: mimeMap[ext] || 'image/jpeg' });
+    fd.append('image', blob, `check.${ext}`);
+
+    const res = await fetch('https://nsfw-categorize.it/api/upload', {
+      method: 'POST',
+      body: fd,
+      signal: AbortSignal.timeout(6500)
+    });
+
+    if (!res.ok) {
+      console.warn('Online NSFW servisi HTTP durum kodu:', res.status);
+      return { isNSFW: false };
+    }
+
+    const json = await res.json();
+    if (json && json.status === 'OK' && json.data) {
+      const isNsfw = !!json.data.nsfw || !!json.data.porn || json.data.classification === 'nsfw' || json.data.classification === 'porn';
+      if (isNsfw) {
+        return {
+          isNSFW: true,
+          reason: `Online AI filtresi tarafından müstehcen (+18) içerik tespit edildi (${json.data.classification || 'NSFW'}).`
+        };
+      }
+    }
+    return { isNSFW: false };
+  } catch (err) {
+    console.warn('Online NSFW API hatası veya zaman aşımı:', err.message);
+    return { isNSFW: false };
+  }
+}
+
+  // Bağımsız Online NSFW Denetim Uç Noktası
+  if (req.method === 'POST' && pathname === '/api/check-nsfw') {
+    try {
+      const body = await parseJsonBody(req, 8 * 1024 * 1024);
+      const dataUri = body.image || '';
+      const match = dataUri.match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.+)$/i);
+      if (!match) {
+        return sendJson(res, { isNSFW: false, error: 'Geçersiz görsel formatı.' }, 400);
+      }
+      const rawExt = match[1].toLowerCase();
+      const ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
+      const buffer = Buffer.from(match[2], 'base64');
+      const checkResult = await checkOnlineNSFW(buffer, ext);
+      return sendJson(res, checkResult);
+    } catch (err) {
+      return sendJson(res, { isNSFW: false, error: err.message });
+    }
+  }
+
   // Profil Avatarı ve Gönderi Görseli Yükleme (public/uploads dizinine güvenli depolama)
   if (req.method === 'POST' && (pathname === '/api/upload-avatar' || pathname === '/api/upload-image')) {
     const uploadLimit = checkRateLimit(clientIp, 'image-upload', 60, 10 * 60 * 1000);
@@ -2003,7 +2058,17 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, { error: 'Görsel +18 / NSFW filtresine takıldı.' }, 403);
       }
 
-      const uploadsDir = path.resolve(__dirname, 'public', 'uploads');
+      // Harici online NSFW servisi ile görseli doğrula
+      const onlineNsfw = await checkOnlineNSFW(buffer, ext);
+      if (onlineNsfw.isNSFW) {
+        return sendJson(res, { error: onlineNsfw.reason || 'Görsel +18 / NSFW filtresine takıldı.' }, 403);
+      }
+
+      const isAvatar = pathname === '/api/upload-avatar' || body.type === 'avatar';
+      const uploadsDir = isAvatar
+        ? path.resolve(__dirname, 'public', 'uploads', 'avatars')
+        : path.resolve(__dirname, 'public', 'uploads');
+
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
@@ -2012,7 +2077,7 @@ const server = http.createServer(async (req, res) => {
       const destPath = path.resolve(uploadsDir, filename);
       fs.writeFileSync(destPath, buffer);
 
-      const fileUrl = `/uploads/${filename}`;
+      const fileUrl = isAvatar ? `/uploads/avatars/${filename}` : `/uploads/${filename}`;
 
       return sendJson(res, {
         ok: true,

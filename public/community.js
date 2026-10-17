@@ -763,129 +763,21 @@ function requireLogin() {
   return false;
 }
 
-/* ---------- NSFW +18 GÖRSEL FİLTRESİ (YAPAY ZEKA + HEURİSTİK) ---------- */
-let nsfwModelInstance = null;
-let nsfwModelPromise = null;
-
-async function ensureNSFWLibraries() {
-  if (window.tf && window.nsfwjs) return true;
-  const loadScript = (src) =>
-    new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) return resolve();
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = () => resolve();
-      s.onerror = (e) => reject(e);
-      document.head.appendChild(s);
+/* ---------- ONLINE HARİCİ NSFW +18 GÖRSEL FİLTRESİ ---------- */
+async function verifyImageNSFW(dataUri) {
+  try {
+    const res = await fetch('/api/check-nsfw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: dataUri })
     });
-
-  try {
-    if (!window.tf) {
-      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js');
+    if (res.ok) {
+      const data = await res.json();
+      return data;
     }
-    if (!window.nsfwjs) {
-      await loadScript('https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js');
-    }
-    return true;
   } catch (err) {
-    console.warn('NSFW AI kütüphaneleri dinamik yüklenemedi:', err);
-    return false;
+    console.warn('Online NSFW denetimi hatası:', err);
   }
-}
-
-async function getNSFWModel() {
-  if (nsfwModelInstance) return nsfwModelInstance;
-  if (nsfwModelPromise) return nsfwModelPromise;
-
-  nsfwModelPromise = (async () => {
-    try {
-      const ok = await ensureNSFWLibraries();
-      if (!ok || typeof window.nsfwjs === 'undefined') return null;
-      try {
-        // Önce yerel sunucumuzdaki MobileNetV2 modelini yükle
-        nsfwModelInstance = await window.nsfwjs.load('/models/nsfw/');
-        return nsfwModelInstance;
-      } catch (e1) {
-        console.warn('Yerel NSFW modeli yüklenemedi, varsayılan deneniyor:', e1);
-        try {
-          nsfwModelInstance = await window.nsfwjs.load();
-          return nsfwModelInstance;
-        } catch (e2) {
-          console.error('NSFW modeli yüklenemedi:', e2);
-          return null;
-        }
-      }
-    } catch (err) {
-      console.warn('getNSFWModel error:', err);
-      return null;
-    } finally {
-      nsfwModelPromise = null;
-    }
-  })();
-  return nsfwModelPromise;
-}
-
-function getSkinColorDensity(img) {
-  try {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const w = 80;
-    const h = 80;
-    canvas.width = w;
-    canvas.height = h;
-    ctx.drawImage(img, 0, 0, w, h);
-    const imgData = ctx.getImageData(0, 0, w, h).data;
-    let skinPixels = 0;
-    const totalPixels = w * h;
-
-    for (let i = 0; i < imgData.length; i += 4) {
-      const r = imgData[i];
-      const g = imgData[i + 1];
-      const b = imgData[i + 2];
-
-      const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
-      const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
-
-      const isRgbSkin = r > 95 && g > 40 && b > 20 && (Math.max(r, g, b) - Math.min(r, g, b) > 15) && Math.abs(r - g) > 15 && r > g && r > b;
-      const isYCbCrSkin = cb >= 77 && cb <= 127 && cr >= 133 && cr <= 173;
-
-      if (isRgbSkin && isYCbCrSkin) {
-        skinPixels++;
-      }
-    }
-    return skinPixels / totalPixels;
-  } catch (e) {
-    return 0;
-  }
-}
-
-async function verifyImageNSFW(imgElement) {
-  const model = await getNSFWModel();
-  if (model) {
-    try {
-      const predictions = await model.classify(imgElement, 3);
-      for (const p of predictions) {
-        if (p.className === 'Porn' && p.probability > 0.30) {
-          return { isNSFW: true, reason: `Müstehcen / Pornografik içerik tespit edildi (%${Math.round(p.probability * 100)})`, predictions };
-        }
-        if (p.className === 'Hentai' && p.probability > 0.35) {
-          return { isNSFW: true, reason: `+18 Çizim / Uygunsuz içerik tespit edildi (%${Math.round(p.probability * 100)})`, predictions };
-        }
-        if (p.className === 'Sexy' && p.probability > 0.65) {
-          return { isNSFW: true, reason: `Aşırı açık / +18 çıplaklık tespit edildi (%${Math.round(p.probability * 100)})`, predictions };
-        }
-      }
-    } catch (classifyErr) {
-      console.warn('NSFW AI classification error:', classifyErr);
-    }
-  }
-
-  // İkincil kontrol: Aşırı açık ten ve çıplaklık heuristiği
-  const skinDensity = getSkinColorDensity(imgElement);
-  if (skinDensity > 0.55) {
-    return { isNSFW: true, reason: `Aşırı çıplaklık ve açık ten yoğunluğu tespit edildi (%${Math.round(skinDensity * 100)})` };
-  }
-
   return { isNSFW: false, reason: null };
 }
 
@@ -1949,17 +1841,9 @@ async function uploadImageToHosting(file, statusBox, type = 'avatar') {
     `;
   }
 
-  // 3. Kırpılmış görseli kontrol et
-  const tempImg = new Image();
-  tempImg.crossOrigin = 'anonymous';
-  await new Promise((resolve) => {
-    tempImg.onload = resolve;
-    tempImg.onerror = resolve;
-    tempImg.src = dataUri;
-  });
-
+  // 3. Online Harici NSFW Kontrolü
   try {
-    const check = await verifyImageNSFW(tempImg);
+    const check = await verifyImageNSFW(dataUri);
     if (check?.isNSFW) {
       if (statusBox) {
         statusBox.innerHTML = `
@@ -1989,11 +1873,11 @@ async function uploadImageToHosting(file, statusBox, type = 'avatar') {
     `;
   }
 
-  // 4. Sunucuya yükle
+  // 4. Sunucuya yükle (Profil resmi avatars dizinine gider)
   const uploadRes = await fetch('/api/upload-image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: dataUri })
+    body: JSON.stringify({ image: dataUri, type: type || 'avatar' })
   });
   const uploadData = await uploadRes.json();
   if (!uploadRes.ok || !uploadData.url) {
