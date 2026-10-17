@@ -1210,6 +1210,134 @@ async function toggleFollow(targetUserId) {
     const counts = await getFollowCounts(targetUserId);
     followersCountEl.textContent = counts.followersCount;
   }
+
+  if (followsModalUserId) {
+    const modalCounts = await getFollowCounts(followsModalUserId);
+    const fCountEl = $('followsTabFollowersCount');
+    const fgCountEl = $('followsTabFollowingCount');
+    if (fCountEl) fCountEl.textContent = `(${modalCounts.followersCount})`;
+    if (fgCountEl) fgCountEl.textContent = `(${modalCounts.followingCount})`;
+  }
+}
+
+let followsModalUserId = null;
+let followsModalActiveTab = 'followers';
+
+async function openFollowsModal(userId, initialTab = 'followers') {
+  const targetId = userId || S.viewingUserId || me();
+  if (!targetId) return;
+
+  followsModalUserId = targetId;
+  followsModalActiveTab = initialTab;
+
+  const modal = $('followsModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  modal.classList.add('open');
+
+  getFollowCounts(targetId).then((counts) => {
+    const fCountEl = $('followsTabFollowersCount');
+    const fgCountEl = $('followsTabFollowingCount');
+    if (fCountEl) fCountEl.textContent = `(${counts.followersCount})`;
+    if (fgCountEl) fgCountEl.textContent = `(${counts.followingCount})`;
+  });
+
+  await switchFollowsTab(initialTab);
+}
+
+function closeFollowsModal() {
+  const modal = $('followsModal');
+  if (modal) {
+    modal.classList.remove('open');
+    modal.style.display = 'none';
+  }
+  followsModalUserId = null;
+}
+
+async function switchFollowsTab(tab) {
+  followsModalActiveTab = tab;
+  $('followsTabFollowers')?.classList.toggle('active', tab === 'followers');
+  $('followsTabFollowing')?.classList.toggle('active', tab === 'following');
+
+  const listEl = $('followsModalList');
+  if (!listEl) return;
+  listEl.innerHTML = `
+    <div style="text-align:center; padding:2.5rem 1rem; color:var(--text-secondary);">
+      <i class="ri-loader-4-line spin" style="font-size:2rem; color:var(--amed-green);"></i>
+      <div style="margin-top:0.6rem; font-size:0.88rem; font-weight:600;">Kullanıcılar yükleniyor...</div>
+    </div>
+  `;
+
+  try {
+    const isFollowers = tab === 'followers';
+    const selectQuery = isFollowers
+      ? 'created_at, profile:profiles!user_follows_follower_id_fkey(id, username, display_name, avatar_url, role, favorite_player, bio)'
+      : 'created_at, profile:profiles!user_follows_following_id_fkey(id, username, display_name, avatar_url, role, favorite_player, bio)';
+    const filterCol = isFollowers ? 'following_id' : 'follower_id';
+
+    const { data, error } = await sb
+      .from('user_follows')
+      .select(selectQuery)
+      .eq(filterCol, followsModalUserId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const users = (data || []).map((row) => row.profile).filter(Boolean);
+
+    if (users.length === 0) {
+      listEl.innerHTML = `
+        <div class="follows-empty">
+          <i class="${isFollowers ? 'ri-group-line' : 'ri-user-follow-line'}" style="font-size:2.6rem; color:var(--text-muted); opacity:0.6;"></i>
+          <div style="font-weight:700; margin-top:0.65rem; color:var(--text-main); font-size:0.95rem;">
+            ${isFollowers ? 'Henüz hiçbir takipçisi yok.' : 'Henüz kimseyi takip etmiyor.'}
+          </div>
+          <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">
+            ${isFollowers ? 'Amedspor ailesine katıldıkça takipçiler burada listelenecektir.' : 'Forumdaki diğer taraftarları takip ederek akışı zenginleştirebilirsiniz.'}
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = users.map((u) => {
+      const isFollowing = S.followingSet.has(u.id);
+      const isMe = me() === u.id;
+      const isAdmin = u.role === 'admin';
+      return `
+        <div class="follows-item">
+          <div class="follows-item-left" data-action="click-follow-user" data-user-id="${u.id}" style="cursor:pointer;" title="Profili Gör">
+            <div class="follows-avatar">
+              ${avatarHTML(u, 44)}
+            </div>
+            <div class="follows-info">
+              <div class="follows-name-row">
+                <span class="follows-display-name">${esc(u.display_name || u.username || 'Amedsporlu')}</span>
+                ${isAdmin ? '<span class="admin-badge"><i class="ri-shield-star-fill"></i> ADMIN</span>' : ''}
+              </div>
+              <div class="follows-username">@${esc(u.username || 'taraftar')}</div>
+              ${u.favorite_player ? `<div class="follows-player"><i class="ri-t-shirt-2-fill"></i> ${esc(u.favorite_player)}</div>` : ''}
+            </div>
+          </div>
+          <div class="follows-item-right">
+            ${!isMe && me() ? `
+              <button type="button" class="tw-sidebar-follow-btn ${isFollowing ? 'following' : ''}" data-action="toggle-follow" data-user-id="${u.id}">
+                <span>${isFollowing ? 'Takip Ediliyor' : 'Takip Et'}</span>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    console.error('switchFollowsTab error:', err);
+    listEl.innerHTML = `
+      <div class="follows-empty" style="color:var(--amed-red);">
+        <i class="ri-error-warning-line" style="font-size:2rem;"></i>
+        <div style="margin-top:0.5rem; font-weight:600;">Liste yüklenirken bir sorun oluştu.</div>
+      </div>
+    `;
+  }
 }
 
 function updateFollowButtons(targetUserId, isFollowing) {
@@ -1421,11 +1549,11 @@ async function renderProfilePage(targetUserId) {
               <span class="puc-stat-num">${userPosts.length}</span>
               <span class="puc-stat-lbl">Gönderi</span>
             </div>
-            <div class="puc-stat-cell">
+            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${targetId}" data-initial-tab="followers" title="Takipçileri Gör">
               <span class="puc-stat-num" id="pucFollowersCount">${followersCount}</span>
               <span class="puc-stat-lbl">Takipçi</span>
             </div>
-            <div class="puc-stat-cell">
+            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${targetId}" data-initial-tab="following" title="Takip Edilenleri Gör">
               <span class="puc-stat-num" id="pucFollowingCount">${followingCount}</span>
               <span class="puc-stat-lbl">Takip Edilen</span>
             </div>
@@ -2513,12 +2641,12 @@ async function renderThreadList() {
               <span class="puc-stat-num">${myPosts.length}</span>
               <span class="puc-stat-lbl">Gönderi</span>
             </div>
-            <div class="puc-stat-cell">
-              <span class="puc-stat-num">${followersCount}</span>
+            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${me()}" data-initial-tab="followers" title="Takipçileri Gör">
+              <span class="puc-stat-num" id="pucFollowersCount">${followersCount}</span>
               <span class="puc-stat-lbl">Takipçi</span>
             </div>
-            <div class="puc-stat-cell">
-              <span class="puc-stat-num">${followingCount}</span>
+            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${me()}" data-initial-tab="following" title="Takip Edilenleri Gör">
+              <span class="puc-stat-num" id="pucFollowingCount">${followingCount}</span>
               <span class="puc-stat-lbl">Takip Edilen</span>
             </div>
             <div class="puc-stat-cell">
@@ -3285,6 +3413,20 @@ function bindEvents() {
         if (targetUserId) toggleFollow(targetUserId);
         return;
       }
+      case 'open-follows-modal':
+        return openFollowsModal(el.dataset.userId, el.dataset.initialTab || 'followers');
+      case 'switch-follows-tab':
+        return switchFollowsTab(el.dataset.tab);
+      case 'close-follows-modal':
+        return closeFollowsModal();
+      case 'click-follow-user': {
+        const uid = el.dataset.userId;
+        if (uid) {
+          closeFollowsModal();
+          openProfile(uid);
+        }
+        return;
+      }
       case 'view-user-profile': {
         const targetUserId = el.dataset.userId;
         if (targetUserId) openProfile(targetUserId);
@@ -3480,6 +3622,15 @@ async function init() {
     loadThreads().then(() => renderThreadList());
   }
   subscribeRealtime();
+
+  $('followsModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'followsModal') closeFollowsModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && $('followsModal')?.style.display === 'flex') {
+      closeFollowsModal();
+    }
+  });
 }
 
 init();

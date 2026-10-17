@@ -8,6 +8,10 @@ const AMED_ESPN_ID = '132335';
 const ESPN_SITE_BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer/tur.1';
 const ESPN_WEB_BASE = 'https://site.web.api.espn.com/apis/v2/sports/soccer/tur.1';
 
+// Supabase Cloud Storage (Kalıcı ve Yeniden Başlatmalara Karşı Güvenli Bulut Depolama)
+const SUPABASE_STORAGE_URL = 'https://iskwimpaynzzyzkjyyrd.supabase.co';
+const SUPABASE_STORAGE_KEY = 'sb_publishable_8t5OyVlM_dfb3wfg30U3FA_Pyee-8d0';
+
 // Web Güvenlik Başlıkları (OWASP Standartları)
 const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
@@ -2077,13 +2081,37 @@ async function checkOnlineNSFW(buffer, ext) {
       const destPath = path.resolve(uploadsDir, filename);
       fs.writeFileSync(destPath, buffer);
 
-      const fileUrl = isAvatar ? `/uploads/avatars/${filename}` : `/uploads/${filename}`;
+      const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
+      const remoteFolder = isAvatar ? 'avatars' : 'posts';
+      const remotePath = `${remoteFolder}/${filename}`;
+      let publicUrl = isAvatar ? `/uploads/avatars/${filename}` : `/uploads/${filename}`;
+
+      try {
+        const sbUploadRes = await fetch(`${SUPABASE_STORAGE_URL}/storage/v1/object/uploads/${remotePath}`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_STORAGE_KEY,
+            'Authorization': `Bearer ${SUPABASE_STORAGE_KEY}`,
+            'Content-Type': mimeMap[ext] || 'image/jpeg',
+            'x-upsert': 'true'
+          },
+          body: buffer
+        });
+        if (sbUploadRes.ok) {
+          publicUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/uploads/${remotePath}`;
+        } else {
+          const errTxt = await sbUploadRes.text();
+          console.warn('Supabase Storage upload warning:', sbUploadRes.status, errTxt);
+        }
+      } catch (sbErr) {
+        console.warn('Supabase Storage network error:', sbErr.message);
+      }
 
       return sendJson(res, {
         ok: true,
-        url: fileUrl,
-        avatarUrl: fileUrl,
-        bannerUrl: fileUrl
+        url: publicUrl,
+        avatarUrl: publicUrl,
+        bannerUrl: publicUrl
       });
     } catch (err) {
       console.error('Image upload failed:', err);

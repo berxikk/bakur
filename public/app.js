@@ -2226,7 +2226,7 @@ function renderPreviousMatchesAndComparisonHTML() {
       <div class="card-header">
         <span class="card-title"><i class="ri-scales-3-line"></i> ${t('seasonCompTitle')}</span>
       </div>
-      <div style="padding: 1.15rem 1.35rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.75rem;">
+      <div class="modal-dual-stats-grid">
         ${buildMiniStatBar(t('thPts'), homeSt.points, awaySt.points)}
         ${buildMiniStatBar(t('ppgText'), homeSt.ppg, awaySt.ppg)}
         ${buildMiniStatBar(t('thGF'), homeSt.scoresFor, awaySt.scoresFor)}
@@ -2602,7 +2602,7 @@ function renderModalBody() {
               ${t('btnSeeAll28')} (${allStats.length} Veri) <i class="ri-arrow-right-s-line"></i>
             </button>
           </div>
-          <div style="padding: 1.15rem 1.35rem; display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 1.75rem;">
+          <div class="modal-dual-stats-grid">
             ${highlightStats.map(buildStatRowHTML).join('')}
           </div>
         </div>
