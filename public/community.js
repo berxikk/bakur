@@ -2357,12 +2357,6 @@ function renderListShell() {
     </div>`;
 
   main.innerHTML = `
-    <div class="tw-timeline-header card">
-      <div class="tw-tabs-filter" id="twStreamTabs">
-        <button class="tw-tab-btn ${S.streamMode === 'all' ? 'active' : ''}" data-action="stream-tab" data-stream="all">${T('streamAll')}</button>
-        <button class="tw-tab-btn ${S.streamMode === 'profile' ? 'active' : ''}" data-action="stream-tab" data-stream="profile"><i class="ri-user-3-line"></i> ${T('streamProfile')}</button>
-      </div>
-    </div>
     ${composerHTML}
     <div class="tw-new-posts-bubble-wrap" id="twNewPostsWrap" style="${S.pendingNewPosts > 0 ? 'display:flex;' : 'display:none;'}">
       <button type="button" class="tw-new-posts-btn" data-action="load-new-posts" id="btnLoadNewPosts">
