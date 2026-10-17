@@ -16,6 +16,8 @@ const CI18N = {
     logout: 'Çıkış Yap',
     signup: 'Kayıt Ol',
     email: 'E-posta',
+    emailOrUsername: 'E-posta veya Kullanıcı adı',
+    usernameNotFound: 'Bu kullanıcı adına ait bir hesap bulunamadı.',
     password: 'Şifre',
     username: 'Kullanıcı adı',
     displayName: 'Görünen ad',
@@ -162,6 +164,8 @@ const CI18N = {
     logout: 'Derkeve',
     signup: 'Tomar bibe',
     email: 'E-name',
+    emailOrUsername: 'E-name an Navê bikarhêner',
+    usernameNotFound: 'Hesabek bi vî navê bikarhêner nehate dîtin.',
     password: 'Şîfre',
     username: 'Navê bikarhêner',
     displayName: 'Navê xuyabûnê',
@@ -981,7 +985,7 @@ function openAuth(mode = 'login') {
       <p class="c-dialog-sub">${T('loginSub')}</p>
       ${google}
       <form class="c-form" data-form="login" novalidate>
-        <label class="c-field"><span>${T('email')}</span><input type="email" name="email" autocomplete="email" required /></label>
+        <label class="c-field"><span>${T('emailOrUsername')}</span><input type="text" name="email" autocomplete="username" placeholder="${T('emailOrUsername')}" required /></label>
         <label class="c-field"><span>${T('password')}</span><input type="password" name="password" autocomplete="current-password" required /></label>
         <div class="c-row-end"><button type="button" class="c-link" data-action="auth-mode" data-mode="reset">${T('forgot')}</button></div>
         <div class="c-form-msg"></div>
@@ -1035,7 +1039,16 @@ async function handleAuthForm(form) {
   setBusy(form, true);
   try {
     if (kind === 'login') {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+      let loginEmail = email;
+      if (!loginEmail.includes('@')) {
+        const { data: resolvedEmail, error: rpcErr } = await sb.rpc('get_email_by_username', { p_username: loginEmail });
+        if (rpcErr || !resolvedEmail) {
+          setBusy(form, false);
+          return formMsg(form, T('usernameNotFound'));
+        }
+        loginEmail = resolvedEmail;
+      }
+      const { error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
       if (error) throw error;
       closeDialog();
     } else if (kind === 'signup') {
@@ -1063,7 +1076,12 @@ async function handleAuthForm(form) {
       }
       closeDialog();
     } else if (kind === 'reset') {
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo });
+      let resetEmail = email;
+      if (!resetEmail.includes('@')) {
+        const { data: resolvedEmail } = await sb.rpc('get_email_by_username', { p_username: resetEmail });
+        if (resolvedEmail) resetEmail = resolvedEmail;
+      }
+      const { error } = await sb.auth.resetPasswordForEmail(resetEmail, { redirectTo });
       if (error) throw error;
       formMsg(form, T('resetSent'), 'ok');
     } else if (kind === 'update') {

@@ -2119,6 +2119,6 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Amedspor Live Hub sunucusu http://localhost:${PORT} adresinde aktif!`);
 });
