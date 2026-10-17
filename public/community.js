@@ -646,7 +646,7 @@ function esc(str) {
 function formatPostContent(str) {
   if (!str) return '';
   let imgHtml = '';
-  const imgRegex = /(https?:\/\/[^\s]+?\.(?:png|jpg|jpeg|webp|gif)(?:\?[^\s]*)?)/gi;
+  const imgRegex = /(?:(https?:\/\/[^\s]+?\.(?:png|jpg|jpeg|webp|gif)(?:\?[^\s]*)?)|(\/uploads\/[^\s]+?\.(?:png|jpg|jpeg|webp|gif)))/gi;
   const matches = str.match(imgRegex);
   let cleanText = str;
   if (matches && matches.length > 0) {
@@ -692,8 +692,13 @@ function sanitizeImageUrl(url) {
     if (!/^\/logos\/[0-9a-zA-Z._-]+\.png$/i.test(str)) return null;
     return str;
   }
-  // Harici Free Hosting (Catbox.moe vb.) ve standart güvenli HTTPS görsel URL'leri
-  if (/^https:\/\/([a-zA-Z0-9.-]+\.)?(catbox\.moe|imgur\.com|freeimage\.host|supabase\.co|flagcdn\.com)\/[^\s<>"']+/i.test(str)) {
+  if (str.startsWith('/uploads/')) {
+    if (str.includes('..') || str.includes('\\')) return null;
+    if (!/^\/uploads\/[0-9a-zA-Z._-]+\.(png|jpg|jpeg|webp|gif)$/i.test(str)) return null;
+    return str;
+  }
+  // Güvenli harici ve yerel domain görsel URL'leri
+  if (/^https?:\/\/([a-zA-Z0-9.-]+\.)?(bakur\.onread\.com|localhost|127\.0\.0\.1|supabase\.co|imgur\.com|freeimage\.host|catbox\.moe|flagcdn\.com)(:\d+)?\/[^\s<>"']+/i.test(str)) {
     return str;
   }
   if (/^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\/[^\s<>"']*\.(png|jpg|jpeg|webp|gif)(\?[^\s<>"']*)?$/i.test(str)) {
@@ -1771,7 +1776,6 @@ let currentCropper = null;
 function showCropDialog(dataUri, type = 'avatar') {
   return new Promise((resolve, reject) => {
     const modal = $('cropModal');
-    const imgTarget = $('cropImageTarget');
     const titleEl = $('cropModalTitle');
     const btnConfirm = $('btnCropConfirm');
     const btnCancel = $('btnCancelCrop');
@@ -1781,7 +1785,7 @@ function showCropDialog(dataUri, type = 'avatar') {
     const btnRotate = $('cropBtnRotate');
     const btnReset = $('cropBtnReset');
 
-    if (!modal || !imgTarget || typeof Cropper === 'undefined') {
+    if (!modal) {
       return resolve(dataUri);
     }
 
@@ -1790,79 +1794,124 @@ function showCropDialog(dataUri, type = 'avatar') {
     }
 
     if (currentCropper) {
-      currentCropper.destroy();
+      try { currentCropper.destroy(); } catch (e) {}
       currentCropper = null;
     }
 
-    imgTarget.src = dataUri;
-    modal.style.display = 'flex';
+    // Modal içindeki görsel alanını temizle ve sıfırdan oluştur
+    const cropContainer = modal.querySelector('.crop-container');
+    if (cropContainer) {
+      cropContainer.innerHTML = '<img id="cropImageTarget" src="" alt="Kırpılacak Görsel" style="display:block; max-width:100%; max-height:100%;" />';
+    }
+    const freshImg = $('cropImageTarget');
 
-    // Cropper instance
-    currentCropper = new Cropper(imgTarget, {
-      aspectRatio: type === 'avatar' ? 1 : (1200 / 400),
-      viewMode: 1,
-      dragMode: 'move',
-      autoCropArea: 0.92,
-      restore: false,
-      guides: true,
-      center: true,
-      highlight: false,
-      cropBoxMovable: true,
-      cropBoxResizable: true,
-      toggleDragModeOnDblclick: false
-    });
+    // Modalı görünür kıl (opacity ve display)
+    modal.style.display = 'flex';
+    modal.classList.add('open');
 
     const cleanup = () => {
+      modal.classList.remove('open');
       modal.style.display = 'none';
       if (currentCropper) {
-        currentCropper.destroy();
+        try { currentCropper.destroy(); } catch (e) {}
         currentCropper = null;
       }
-      btnConfirm.onclick = null;
-      btnCancel.onclick = null;
-      btnDismiss.onclick = null;
+      if (btnConfirm) btnConfirm.onclick = null;
+      if (btnCancel) btnCancel.onclick = null;
+      if (btnDismiss) btnDismiss.onclick = null;
       if (btnZoomIn) btnZoomIn.onclick = null;
       if (btnZoomOut) btnZoomOut.onclick = null;
       if (btnRotate) btnRotate.onclick = null;
       if (btnReset) btnReset.onclick = null;
     };
 
+    if (btnCancel) {
+      btnCancel.onclick = () => {
+        cleanup();
+        reject(new Error('Kırpma işlemi iptal edildi.'));
+      };
+    }
+
+    if (btnDismiss) {
+      btnDismiss.onclick = () => {
+        cleanup();
+        reject(new Error('Kırpma işlemi iptal edildi.'));
+      };
+    }
+
     if (btnZoomIn) btnZoomIn.onclick = () => currentCropper?.zoom(0.1);
     if (btnZoomOut) btnZoomOut.onclick = () => currentCropper?.zoom(-0.1);
     if (btnRotate) btnRotate.onclick = () => currentCropper?.rotate(90);
     if (btnReset) btnReset.onclick = () => currentCropper?.reset();
 
-    btnCancel.onclick = () => {
-      cleanup();
-      reject(new Error('Kırpma işlemi iptal edildi.'));
-    };
+    if (btnConfirm) {
+      btnConfirm.onclick = () => {
+        if (!currentCropper) {
+          cleanup();
+          return resolve(dataUri);
+        }
+        try {
+          const canvas = currentCropper.getCroppedCanvas({
+            width: type === 'avatar' ? 400 : 1200,
+            height: type === 'avatar' ? 400 : 400,
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+          });
+          const croppedData = canvas ? canvas.toDataURL('image/jpeg', 0.92) : dataUri;
+          cleanup();
+          resolve(croppedData);
+        } catch (e) {
+          cleanup();
+          resolve(dataUri);
+        }
+      };
+    }
 
-    btnDismiss.onclick = () => {
+    if (!freshImg) {
       cleanup();
-      reject(new Error('Kırpma işlemi iptal edildi.'));
-    };
+      return resolve(dataUri);
+    }
 
-    btnConfirm.onclick = () => {
-      if (!currentCropper) {
+    // Görsel yüklendikten sonra Cropper başlat
+    freshImg.onload = () => {
+      if (typeof Cropper === 'undefined') {
         cleanup();
         return resolve(dataUri);
       }
-      const canvas = currentCropper.getCroppedCanvas({
-        width: type === 'avatar' ? 400 : 1200,
-        height: type === 'avatar' ? 400 : 400,
-        imageSmoothingEnabled: true,
-        imageSmoothingQuality: 'high'
-      });
-      const croppedData = canvas.toDataURL('image/jpeg', 0.92);
-      cleanup();
-      resolve(croppedData);
+      setTimeout(() => {
+        try {
+          currentCropper = new Cropper(freshImg, {
+            aspectRatio: type === 'avatar' ? 1 : (1200 / 400),
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.95,
+            restore: false,
+            guides: true,
+            center: true,
+            highlight: false,
+            cropBoxMovable: true,
+            cropBoxResizable: true,
+            toggleDragModeOnDblclick: false
+          });
+        } catch (cropErr) {
+          console.warn('Cropper başlatılamadı, orijinal görsel kullanılıyor:', cropErr);
+          cleanup();
+          resolve(dataUri);
+        }
+      }, 50);
     };
+
+    freshImg.onerror = () => {
+      cleanup();
+      resolve(dataUri);
+    };
+
+    freshImg.src = dataUri;
   });
 }
 
 /**
- * Ücretsiz Harici Resim Hostingine (Catbox.moe) Kırpma, Güvenlik ve NSFW Taramalı Yükleme Fonksiyonu.
- * Sunucu diskinde veya veritabanında ASLA dosya saklanmaz.
+ * Resim Yükleme, Kırpma ve Güvenlik Taramalı Yükleme Fonksiyonu
  */
 async function uploadImageToHosting(file, statusBox, type = 'avatar') {
   if (file.size > 8 * 1024 * 1024) {
@@ -1903,39 +1952,44 @@ async function uploadImageToHosting(file, statusBox, type = 'avatar') {
   // 3. Kırpılmış görseli kontrol et
   const tempImg = new Image();
   tempImg.crossOrigin = 'anonymous';
-  await new Promise((resolve, reject) => {
+  await new Promise((resolve) => {
     tempImg.onload = resolve;
-    tempImg.onerror = () => reject(new Error('Görsel okunamadı veya bozuk format.'));
+    tempImg.onerror = resolve;
     tempImg.src = dataUri;
   });
 
-  const check = await verifyImageNSFW(tempImg);
-  if (check.isNSFW) {
-    if (statusBox) {
-      statusBox.innerHTML = `
-        <div class="nsfw-alert-error">
-          <i class="ri-shield-cross-fill" style="color:var(--amed-red); font-size:1.6rem;"></i>
-          <div>
-            <strong>${T('nsfwBlockedTitle')}</strong><br>
-            <span class="nsfw-reason-text">${esc(check.reason || 'Müstehcen / +18 içerik tespit edildi.')}</span>
-            <div class="nsfw-desc-sub">${T('nsfwBlockedDesc')}</div>
+  try {
+    const check = await verifyImageNSFW(tempImg);
+    if (check?.isNSFW) {
+      if (statusBox) {
+        statusBox.innerHTML = `
+          <div class="nsfw-alert-error">
+            <i class="ri-shield-cross-fill" style="color:var(--amed-red); font-size:1.6rem;"></i>
+            <div>
+              <strong>${T('nsfwBlockedTitle')}</strong><br>
+              <span class="nsfw-reason-text">${esc(check.reason || 'Müstehcen / +18 içerik tespit edildi.')}</span>
+              <div class="nsfw-desc-sub">${T('nsfwBlockedDesc')}</div>
+            </div>
           </div>
-        </div>
-      `;
+        `;
+      }
+      throw new Error(check.reason || 'Müstehcen / +18 içerik tespit edildi.');
     }
-    throw new Error(check.reason || 'Müstehcen / +18 içerik tespit edildi.');
+  } catch (nsfwErr) {
+    if (nsfwErr.message.includes('Müstehcen') || nsfwErr.message.includes('+18')) throw nsfwErr;
+    console.warn('NSFW kontrolü atlandı:', nsfwErr);
   }
 
   if (statusBox) {
     statusBox.innerHTML = `
       <div class="nsfw-scanning-box">
         <i class="ri-loader-4-line spin"></i>
-        <span>Görsel onaylandı, bulut hostinge aktarılıyor...</span>
+        <span>Görsel kaydediliyor...</span>
       </div>
     `;
   }
 
-  // 4. Catbox.moe'ye aktar
+  // 4. Sunucuya yükle
   const uploadRes = await fetch('/api/upload-image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1943,7 +1997,7 @@ async function uploadImageToHosting(file, statusBox, type = 'avatar') {
   });
   const uploadData = await uploadRes.json();
   if (!uploadRes.ok || !uploadData.url) {
-    throw new Error(uploadData.error || 'Görsel bulut servisine yüklenemedi.');
+    throw new Error(uploadData.error || 'Görsel sunucuya yüklenemedi.');
   }
 
   if (statusBox) {
@@ -1952,7 +2006,7 @@ async function uploadImageToHosting(file, statusBox, type = 'avatar') {
         <i class="ri-checkbox-circle-fill" style="color:var(--amed-green); font-size:1.5rem;"></i>
         <div>
           <strong>${T('nsfwPassed')}</strong><br>
-          <span>Görsel bulut servisine başarıyla yüklendi.</span>
+          <span>Görsel başarıyla yüklendi.</span>
         </div>
       </div>
     `;
@@ -2376,18 +2430,10 @@ function renderListShell() {
         <div class="tw-composer-row">
           ${avatarHTML(p, 46)}
           <div class="tw-composer-main">
-            <textarea id="quickPostInput" rows="3" maxlength="280" placeholder="${T('composerPlaceholder')}" required></textarea>
+            <textarea id="quickPostInput" rows="3" maxlength="280" placeholder="${T('composerPlaceholder')}"></textarea>
             
             <!-- Görsel Önizleme Alanı -->
             <div id="composerMediaPreview" class="composer-media-preview" style="display:none;"></div>
-            
-            <!-- Açılır Emoji Çekmecesi -->
-            <div id="composerEmojiBar" class="composer-pop-drawer" style="display:none;">
-              <div class="composer-drawer-title"><i class="ri-emotion-line"></i> Emoji Seç</div>
-              <div class="composer-emoji-grid">
-                ${['💚', '❤️', '⚽', '🦅', '🦁', '🏆', '🔥', '👏', '👑', '🤍', '🟢', '🔴', '👊', '⚡', '🎉', '🏟️', '✊', '✌️', '🥇', '💯', '🎯', '🚀', '😍', '💪', '🙌', '🫡', '😎'].map(em => `<button type="button" class="composer-emoji-btn" data-action="insert-emoji" data-emoji="${em}">${em}</button>`).join('')}
-              </div>
-            </div>
 
             <!-- Açılır Hashtag Çekmecesi -->
             <div id="composerHashtagBar" class="composer-pop-drawer" style="display:none;">
@@ -2403,7 +2449,6 @@ function renderListShell() {
                 <button type="button" class="tw-tool-btn" data-action="trigger-composer-image" title="Görsel Yükle"><i class="ri-image-line"></i></button>
                 <input type="file" id="twComposerImgFile" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" />
                 <button type="button" class="tw-tool-btn" data-action="toggle-composer-tags" title="Hashtag Ekle"><i class="ri-hashtag"></i></button>
-                <button type="button" class="tw-tool-btn" data-action="toggle-composer-emoji" title="Emoji Ekle"><i class="ri-emotion-line"></i></button>
                 <span class="tw-char-counter" id="quickPostCount">0 / 280</span>
               </div>
               <button type="submit" class="tw-tweet-btn" id="quickPostSubmitBtn">
@@ -3109,8 +3154,8 @@ async function shareThread(id) {
 }
 
 async function uploadComposerImage(file) {
-  if (file.size > 5 * 1024 * 1024) {
-    toast('Görsel boyutu en fazla 5MB olabilir.', 'err');
+  if (file.size > 8 * 1024 * 1024) {
+    toast('Görsel boyutu en fazla 8MB olabilir.', 'err');
     return;
   }
   const preview = $('composerMediaPreview');
@@ -3408,29 +3453,7 @@ function bindEvents() {
       }
       case 'toggle-composer-tags': {
         const tagBar = $('composerHashtagBar');
-        const emojiBar = $('composerEmojiBar');
-        if (emojiBar) emojiBar.style.display = 'none';
         if (tagBar) tagBar.style.display = tagBar.style.display === 'none' ? 'block' : 'none';
-        return;
-      }
-      case 'toggle-composer-emoji': {
-        const emojiBar = $('composerEmojiBar');
-        const tagBar = $('composerHashtagBar');
-        if (tagBar) tagBar.style.display = 'none';
-        if (emojiBar) emojiBar.style.display = emojiBar.style.display === 'none' ? 'block' : 'none';
-        return;
-      }
-      case 'insert-emoji': {
-        const em = el.dataset.emoji;
-        const input = $('quickPostInput');
-        if (input && em) {
-          const cur = input.value || '';
-          if (cur.length + em.length <= 280) {
-            input.value = cur + em;
-            input.focus();
-            updateQuickCharCount();
-          }
-        }
         return;
       }
       case 'remove-composer-img': {

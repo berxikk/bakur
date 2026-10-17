@@ -1961,16 +1961,15 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, { error: 'Banner yükleme özelliği devre dışı bırakılmıştır.' }, 403);
   }
 
-  // Profil Avatarı Yükleme (ÜCRETSİZ HARİCİ RESİM HOSTİNG ENTEGRASYONU - CATBOX.MOE)
-  // Veritabanımızda ve yerel diskimizde ASLA görsel dosyası tutulmaz!
+  // Profil Avatarı ve Gönderi Görseli Yükleme (public/uploads dizinine güvenli depolama)
   if (req.method === 'POST' && (pathname === '/api/upload-avatar' || pathname === '/api/upload-image')) {
-    const uploadLimit = checkRateLimit(clientIp, 'image-upload', 20, 10 * 60 * 1000);
+    const uploadLimit = checkRateLimit(clientIp, 'image-upload', 60, 10 * 60 * 1000);
     if (!uploadLimit.allowed) {
       return sendJson(res, { error: `Çok fazla görsel yükleme denemesi. Lütfen ${uploadLimit.retryAfter} saniye sonra tekrar deneyin.` }, 429);
     }
 
     try {
-      const body = await parseJsonBody(req, 6 * 1024 * 1024);
+      const body = await parseJsonBody(req, 8 * 1024 * 1024);
       const dataUri = body.image || '';
       const match = dataUri.match(/^data:image\/(png|jpeg|jpg|webp|gif);base64,(.+)$/i);
       if (!match) {
@@ -1980,8 +1979,8 @@ const server = http.createServer(async (req, res) => {
       const ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
       const buffer = Buffer.from(match[2], 'base64');
 
-      if (buffer.length < 50 || buffer.length > 5 * 1024 * 1024) {
-        return sendJson(res, { error: 'Görsel boyutu 50 bayt ile 5 MB arasında olmalıdır.' }, 400);
+      if (buffer.length < 50 || buffer.length > 8 * 1024 * 1024) {
+        return sendJson(res, { error: 'Görsel boyutu 50 bayt ile 8 MB arasında olmalıdır.' }, 400);
       }
 
       // Magic bytes doğrulama (Sahte uzantı saldırılarına karşı)
@@ -2004,33 +2003,22 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, { error: 'Görsel +18 / NSFW filtresine takıldı.' }, 403);
       }
 
-      // Ücretsiz Harici Resim Hosting Servisine (Catbox.moe) Gönder
-      const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
-      const blob = new Blob([buffer], { type: mimeMap[ext] || 'image/jpeg' });
-      const formData = new FormData();
-      formData.append('reqtype', 'fileupload');
-      formData.append('fileToUpload', blob, `amed-${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`);
-
-      const hostRes = await fetch('https://catbox.moe/user/api.php', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!hostRes.ok) {
-        throw new Error(`Resim hosting servisi yanıt vermedi (HTTP ${hostRes.status})`);
+      const uploadsDir = path.resolve(__dirname, 'public', 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
       }
 
-      const remoteUrl = (await hostRes.text()).trim();
-      if (!remoteUrl.startsWith('http')) {
-        throw new Error(`Hosting servisinden geçersiz yanıt alındı: ${remoteUrl}`);
-      }
+      const filename = `img_${Date.now()}_${crypto.randomBytes(8).toString('hex')}.${ext}`;
+      const destPath = path.resolve(uploadsDir, filename);
+      fs.writeFileSync(destPath, buffer);
+
+      const fileUrl = `/uploads/${filename}`;
 
       return sendJson(res, {
         ok: true,
-        url: remoteUrl,
-        avatarUrl: remoteUrl,
-        bannerUrl: remoteUrl,
-        provider: 'catbox.moe'
+        url: fileUrl,
+        avatarUrl: fileUrl,
+        bannerUrl: fileUrl
       });
     } catch (err) {
       console.error('Image upload failed:', err);
@@ -2073,6 +2061,7 @@ const server = http.createServer(async (req, res) => {
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
     '.webp': 'image/webp',
+    '.gif': 'image/gif',
     '.bin': 'application/octet-stream'
   };
 
@@ -2108,7 +2097,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', ...SECURITY_HEADERS });
       return res.end('404 Not Found');
     }
-    const isImage = ['.png', '.jpg', '.jpeg', '.webp'].includes(extname);
+    const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.gif'].includes(extname);
     res.writeHead(200, {
       'Content-Type': mimeTypes[extname] || (pathname.includes('/models/') ? 'application/octet-stream' : 'text/plain'),
       'Cache-Control': isImage ? 'public, max-age=86400' : 'no-store, no-cache, must-revalidate',
