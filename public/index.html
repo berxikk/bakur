@@ -22,14 +22,14 @@
   <meta property="og:url" content="https://bakur.onread.com" />
   <meta property="og:title" content="Bakûr" />
   <meta property="og:description" content="Amedspor Canlı Takip, Maç Merkezi ve Taraftar Topluluğu" />
-  <meta property="og:image" content="https://bakur.onread.com/logos/132335.png" />
+  <meta property="og:image" content="https://bakur.onread.com/logos/bakur-logo.png" />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:domain" content="bakur.onread.com" />
   <meta name="twitter:url" content="https://bakur.onread.com" />
   <meta name="twitter:title" content="Bakûr" />
   <meta name="twitter:description" content="Amedspor Canlı Takip, Maç Merkezi ve Taraftar Topluluğu" />
-  <meta name="twitter:image" content="https://bakur.onread.com/logos/132335.png" />
-  <link rel="icon" type="image/png" href="/logos/132335.png" />
+  <meta name="twitter:image" content="https://bakur.onread.com/logos/bakur-logo.png" />
+  <link rel="icon" type="image/png" href="/logos/bakur-logo.png" />
   <!-- Google Fonts: Outfit, Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,7 +39,7 @@
   <!-- Cropper.js Görsel Kırpma Kütüphanesi -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=25" />
+  <link rel="stylesheet" href="/styles.css?v=27" />
 </head>
 <body style="background-color: #0C1014 !important; color: #f8fafc;">
   <div class="app-shell" id="appShell">
@@ -48,7 +48,7 @@
       <div class="sidebar-top">
         <div class="brand" id="brandHomeBtn" title="Bakûr • Ana Sayfa" role="button" tabindex="0">
           <div class="brand-crest-wrap">
-            <img class="brand-crest" src="/logos/132335.png" alt="Bakûr" />
+            <img class="brand-crest" src="/logos/bakur-logo.png" alt="Bakûr" />
           </div>
           <span class="brand-name-text">Bakûr</span>
         </div>
@@ -106,8 +106,8 @@
           <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menüyü Aç" title="Menü">
             <i class="ri-menu-2-line"></i>
           </button>
-          <div class="mobile-brand" onclick="switchTab('overview')">
-            <img src="/icons/icon-192.png" alt="Amedspor" class="mobile-brand-logo" />
+          <div class="mobile-brand" id="brandMobileBtn" role="button" tabindex="0" title="Bakûr • Ana Sayfa">
+            <img src="/logos/bakur-logo.png" alt="Bakûr" class="mobile-brand-logo" />
             <span class="mobile-brand-title">Bakûr</span>
           </div>
         </div>
@@ -608,6 +608,8 @@
         <button type="button" class="c-btn c-btn-primary" id="btnCropConfirm"><i class="ri-check-line"></i> Kırp ve Onayla</button>
       </div>
     </div>
+  </div> <!-- /#cropModal -->
+
   <!-- Takipçi & Takip Edilenler Listesi Modalı -->
   <div class="c-backdrop" id="followsModal" style="display:none; z-index:9999;">
     <div class="follows-modal-box">
@@ -628,10 +630,10 @@
         <!-- Dinamik liste yüklenecek -->
       </div>
     </div>
-  </div>
+  </div> <!-- /#followsModal -->
 
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-  <script src="/app.js?v=20"></script>
-  <script type="module" src="/community.js?v=19"></script>
+  <script src="/app.js?v=22"></script>
+  <script type="module" src="/community.js?v=21"></script>
 </body>
 </html>

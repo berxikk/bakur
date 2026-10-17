@@ -659,7 +659,7 @@ function formatPostContent(str) {
   }
   const escaped = esc(cleanText);
   const formatted = escaped
-    .replace(/(#[\p{L}\p{N}_]+)/gu, '<span class="soc-hashtag" style="color:var(--amed-green); font-weight:700; cursor:pointer;" data-action="insert-tag" data-tag="$1">$1</span>')
+    .replace(/(#[\p{L}\p{N}_]+)/gu, '<span class="soc-hashtag" style="color:var(--amed-green); font-weight:700; cursor:pointer;" data-action="filter-hashtag" data-tag="$1" title="Bu etikete sahip gönderileri listele">$1</span>')
     .replace(/(@[a-zA-Z0-9_.]+)/g, '<span class="soc-mention" style="color:var(--amed-green); font-weight:600;">$1</span>');
   return formatted + imgHtml;
 }
@@ -1225,7 +1225,11 @@ let followsModalActiveTab = 'followers';
 
 async function openFollowsModal(userId, initialTab = 'followers') {
   const targetId = userId || S.viewingUserId || me();
-  if (!targetId) return;
+  if (!targetId) {
+    toast('Takipçi listesini görüntülemek için lütfen giriş yapın.', 'info');
+    openAuth('login');
+    return;
+  }
 
   followsModalUserId = targetId;
   followsModalActiveTab = initialTab;
@@ -2407,9 +2411,6 @@ function renderListShell() {
           <div class="tw-composer-main">
             <textarea id="quickPostInput" rows="3" maxlength="280" placeholder="${T('composerPlaceholder')}"></textarea>
             
-            <!-- Görsel Önizleme Alanı -->
-            <div id="composerMediaPreview" class="composer-media-preview" style="display:none;"></div>
-
             <!-- Açılır Hashtag Çekmecesi -->
             <div id="composerHashtagBar" class="composer-pop-drawer" style="display:none;">
               <div class="composer-drawer-title"><i class="ri-hashtag"></i> Popüler Amedspor Etiketleri</div>
@@ -2418,12 +2419,17 @@ function renderListShell() {
               </div>
             </div>
 
+            <!-- Görsel Önizleme Alanı -->
+            <div id="composerMediaPreview" class="composer-media-preview" style="display:none;"></div>
+
             ${tagsRowHTML}
             <div class="tw-composer-bar">
               <div class="tw-composer-tools">
-                <button type="button" class="tw-tool-btn" data-action="trigger-composer-image" title="Görsel Yükle"><i class="ri-image-line"></i></button>
-                <input type="file" id="twComposerImgFile" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" />
-                <button type="button" class="tw-tool-btn" data-action="toggle-composer-tags" title="Hashtag Ekle"><i class="ri-hashtag"></i></button>
+                <label for="twComposerImgFile" class="tw-tool-btn" id="composerImgBtn" title="Görsel Ekle" role="button" tabindex="0">
+                  <i class="ri-image-line"></i>
+                  <input type="file" id="twComposerImgFile" accept="image/png,image/jpeg,image/webp,image/gif" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; z-index:-1;" />
+                </label>
+                <button type="button" class="tw-tool-btn" id="composerHashtagBtn" data-action="toggle-composer-tags" title="Hashtag Ekle"><i class="ri-hashtag"></i></button>
                 <span class="tw-char-counter" id="quickPostCount">0 / 280</span>
               </div>
               <button type="submit" class="tw-tweet-btn" id="quickPostSubmitBtn">
@@ -3076,31 +3082,19 @@ function updateQuickCharCount() {
 function insertTag(tag) {
   const tagBar = $('composerHashtagBar');
   if (tagBar) tagBar.style.display = 'none';
-  const emojiBar = $('composerEmojiBar');
-  if (emojiBar) emojiBar.style.display = 'none';
+  $('composerHashtagBtn')?.classList.remove('active');
   const input = $('quickPostInput');
   if (!input) {
-    openNewThread();
-    setTimeout(() => {
-      const bodyInput = document.querySelector('form[data-form="thread"] textarea[name="body"]');
-      if (bodyInput) {
-        const cur = bodyInput.value ? bodyInput.value.trim() : '';
-        const add = (cur ? ' ' : '') + tag + ' ';
-        if ((cur + add).length <= 280) {
-          bodyInput.value = cur + add;
-          bodyInput.focus();
-        }
-      }
-    }, 100);
     return;
   }
-  const cur = input.value ? input.value.trim() : '';
-  const add = (cur ? ' ' : '') + tag + ' ';
+  let cur = input.value || '';
+  cur = cur.replace(/#\s*$/, '').trim();
+  const add = (cur.length > 0 ? ' ' : '') + tag + ' ';
   if ((cur + add).length > 280) {
-    toast('Hashtag eklendiğinde 280 karakter sınırı aşıldığı için eklenemedi.', 'warn');
+    toast('Hashtag eklendiğinde 280 karakter sınırı aşılacağı için eklenemedi.', 'warn');
     return;
   }
-  input.value = cur + add;
+  input.value = (cur.length > 0 ? cur + ' ' : '') + tag + ' ';
   input.focus();
   updateQuickCharCount();
 }
@@ -3166,12 +3160,14 @@ async function uploadComposerImage(file) {
           </div>
         `;
       }
+      $('composerImgBtn')?.classList.add('has-image');
       toast('Görsel başarıyla eklendi! 📸');
     } catch (err) {
       if (preview) {
         preview.style.display = 'none';
         preview.innerHTML = '';
       }
+      $('composerImgBtn')?.classList.remove('has-image');
       S.composerUploadedImage = null;
       toast(err.message || 'Fotoğraf yüklenemedi.', 'err');
     }
@@ -3220,6 +3216,7 @@ async function handleQuickPost(form) {
     preview.style.display = 'none';
     preview.innerHTML = '';
   }
+  $('composerImgBtn')?.classList.remove('has-image');
   const fileInp = $('twComposerImgFile');
   if (fileInp) fileInp.value = '';
   updateQuickCharCount();
@@ -3442,11 +3439,43 @@ function bindEvents() {
       }
       case 'toggle-composer-tags': {
         const tagBar = $('composerHashtagBar');
-        if (tagBar) tagBar.style.display = tagBar.style.display === 'none' ? 'block' : 'none';
+        const btn = $('composerHashtagBtn') || el;
+        const input = $('quickPostInput');
+        if (tagBar) {
+          const isHidden = tagBar.style.display === 'none';
+          tagBar.style.display = isHidden ? 'block' : 'none';
+          btn?.classList.toggle('active', isHidden);
+          if (isHidden && input) {
+            let cur = input.value || '';
+            if (!cur.endsWith('#') && !cur.endsWith('# ')) {
+              const sep = (cur.length > 0 && !cur.endsWith(' ')) ? ' ' : '';
+              input.value = cur + sep + '#';
+            }
+            input.focus();
+            updateQuickCharCount();
+          }
+        }
+        return;
+      }
+      case 'filter-hashtag': {
+        const tag = el.dataset.tag;
+        if (!tag) return;
+        const searchInp = $('forumSearch');
+        if (searchInp) searchInp.value = tag;
+        S.search = tag;
+        S.limit = 20;
+        if (S.view === 'thread') {
+          showList();
+        } else {
+          loadThreads().then(() => renderThreadList());
+        }
+        toast(`"${tag}" etiketine göre filtrelendi.`);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
       case 'remove-composer-img': {
         S.composerUploadedImage = null;
+        $('composerImgBtn')?.classList.remove('has-image');
         const preview = $('composerMediaPreview');
         if (preview) {
           preview.style.display = 'none';
