@@ -1,0 +1,9 @@
+{
+  "name": "amedspor-live",
+  "version": "1.0.0",
+  "description": "Amedspor Canlı Maç Merkezi, Fikstür, Puan Durumu ve İstatistik Platformu (Limitsiz SofaScore + ESPN Hibrit API)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

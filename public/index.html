@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark" style="background-color: #0C1014 !important; color: #f8fafc;">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    (function() {
+      var saved = localStorage.getItem('amed_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.documentElement.style.backgroundColor = saved === 'light' ? '#f8fafc' : '#0C1014';
+    })();
+  </script>
+  <style>
+    html, body {
+      background-color: #0C1014 !important;
+      color: #f8fafc !important;
+    }
+  </style>
+  <title>Bakûr</title>
+  <link rel="icon" type="image/png" href="/logos/132335.png" />
+  <!-- Google Fonts: Outfit, Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Remix Icon Vektör İkon Kütüphanesi -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+  <!-- Cropper.js Görsel Kırpma Kütüphanesi -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+  <link rel="stylesheet" href="/styles.css?v=18" />
+</head>
+<body style="background-color: #0C1014 !important; color: #f8fafc;">
+  <div class="app-shell" id="appShell">
+    <!-- Sol Dikey Sidebar (Sekmeler solda alt alta sıralı) -->
+    <aside class="app-sidebar" id="appSidebar">
+      <div class="sidebar-top">
+        <div class="brand" id="brandHomeBtn" title="Bakûr • Ana Sayfa" role="button" tabindex="0">
+          <div class="brand-crest-wrap">
+            <img class="brand-crest" src="/logos/132335.png" alt="Bakûr" />
+          </div>
+          <span class="brand-name-text">Bakûr</span>
+        </div>
+        <button type="button" class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Menüyü Kapat" title="Kapat">
+          <i class="ri-close-line"></i>
+        </button>
+      </div>
+
+      <!-- Solda Alt Alta Dikey Sekme Navigasyonu -->
+      <nav class="nav-tabs vertical-nav" id="mainNav">
+        <button class="nav-tab active" data-tab="overview">
+          <i class="ri-layout-grid-line"></i> <span data-i18n="navOverview">Genel Bakış</span>
+        </button>
+        <button class="nav-tab" data-tab="fixtures">
+          <i class="ri-calendar-2-line"></i> <span data-i18n="navCalendar">Maç Takvimi</span>
+        </button>
+        <button class="nav-tab" data-tab="past-details">
+          <i class="ri-file-chart-line"></i> <span data-i18n="navPastDetails">Önceki Maç Detayları</span>
+        </button>
+        <button class="nav-tab" data-tab="standings">
+          <i class="ri-bar-chart-grouped-line"></i> <span data-i18n="navStandings">Puan Durumu</span>
+        </button>
+        <button class="nav-tab" data-tab="squad">
+          <i class="ri-team-line"></i> <span data-i18n="navSquad">Kadro</span>
+        </button>
+        <button class="nav-tab" data-tab="superlig">
+          <i class="ri-football-line"></i> <span data-i18n="navMatchweek">Haftanın Maçları</span>
+        </button>
+        <button class="nav-tab" data-tab="forum">
+          <i class="ri-chat-3-line"></i> <span data-ci18n="navPosts">Gönderiler</span>
+        </button>
+        <button class="nav-tab" data-tab="profile" id="navProfileTab">
+          <i class="ri-user-3-line"></i> <span data-ci18n="profile">Profil</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Alt Kısım: Kullanıcı Profil & Ayarlar Alanı + Tema Değiştirici -->
+      <div class="sidebar-footer">
+        <div id="authArea" class="auth-area sidebar-auth-area"></div>
+        <button type="button" class="sidebar-theme-toggle" id="themeToggleBtnSidebar" title="Koyu / Açık Mod">
+          <i class="ri-moon-line" id="sidebarThemeIcon"></i>
+          <span id="sidebarThemeLabel">Koyu Mod</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Mobil Menü Karartma Maskesi -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- Sağ Ana İçerik Bölgesi -->
+    <div class="app-main-content">
+      <!-- Mobilde Menü Açma Butonu (Masaüstünde tamamen gizli, hiçbir navbar yok) -->
+      <button type="button" class="mobile-menu-fab" id="mobileMenuBtn" aria-label="Menüyü Aç" title="Menü">
+        <i class="ri-menu-2-line"></i>
+      </button>
+
+  <main class="container">
+    <!-- SEKME 1: GENEL BAKIŞ -->
+    <section class="tab-panel active" id="tab-overview">
+      <!-- Sıradaki Maç ve Son Maç Vitrini (Yan Yana Ferah Kartlar) -->
+      <div class="hero-matches-grid" id="heroMatchesContainer">
+        <div class="match-spotlight">
+          <div style="color: var(--text-secondary); font-size: 0.9rem;">
+            <i class="ri-loader-4-line"></i> <span data-i18n="loading">Yükleniyor...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4'lü Özet KPI Kartları -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-label" data-i18n="kpiRankLabel">Süper Lig Sıralaması</div>
+            <div class="kpi-value" id="kpiRank">—</div>
+            <div class="kpi-sub" id="kpiPoints">—</div>
+          </div>
+          <div class="kpi-icon-box">
+            <i class="ri-medal-line"></i>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-label" data-i18n="kpiRecordLabel">Sezon Performansı</div>
+            <div class="kpi-value" id="kpiRecord">—</div>
+            <div class="kpi-sub" id="kpiPlayed">—</div>
+          </div>
+          <div class="kpi-icon-box">
+            <i class="ri-line-chart-line"></i>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-label" data-i18n="kpiGoalsLabel">Gol İstatistiği &amp; Averaj</div>
+            <div class="kpi-value" id="kpiGoals">—</div>
+            <div class="kpi-sub" id="kpiDiff">—</div>
+          </div>
+          <div class="kpi-icon-box red">
+            <i class="ri-focus-3-line"></i>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div>
+            <div class="kpi-label" data-i18n="kpiFormLabel">Son 5 Maç Formu</div>
+            <div class="form-pills" id="kpiForm"></div>
+            <div class="kpi-sub" data-i18n="kpiFormHint">Önceki maç detayı için kutucuğa tıklayın</div>
+          </div>
+          <div class="kpi-icon-box">
+            <i class="ri-fire-line"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- İki Sütunlu Ana Görünüm -->
+      <div class="dashboard-grid">
+        <div>
+          <!-- Yaklaşan Maçlar -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="ri-calendar-todo-line"></i> <span data-i18n="upcomingTitle">Yaklaşan Amedspor Maçları</span>
+              </div>
+              <button class="card-action" onclick="switchTab('fixtures')">
+                <span data-i18n="btnFullCalendar">Maç Takvimi</span> <i class="ri-arrow-right-s-line"></i>
+              </button>
+            </div>
+            <div class="match-list" id="overviewUpcomingList"></div>
+          </div>
+
+          <!-- Son Oynanan Maçlar -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="ri-history-line"></i> <span data-i18n="recentTitle">Son Oynanan Maçlar</span>
+              </div>
+              <button class="card-action" onclick="switchTab('past-details')">
+                <span data-i18n="navPastDetails">Önceki Maç Detayları</span> <i class="ri-arrow-right-s-line"></i>
+              </button>
+            </div>
+            <div class="match-list" id="overviewRecentList"></div>
+          </div>
+        </div>
+
+        <!-- Sağ Sütun: Kompakt Puan Durumu -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="ri-bar-chart-box-line"></i> <span data-i18n="miniTableTitle">Süper Lig Puan Tablosu</span>
+              </div>
+              <button class="card-action" onclick="switchTab('standings')">
+                <span data-i18n="btnFullTable">Detaylı Tablo</span> <i class="ri-arrow-right-s-line"></i>
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table class="standings-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th class="col-team" data-i18n="thClub">Kulüp</th>
+                    <th data-i18n="thP">O</th>
+                    <th data-i18n="thGD">AV</th>
+                    <th data-i18n="thPtsShort">P</th>
+                  </tr>
+                </thead>
+                <tbody id="miniStandingsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 2: FİKSTÜR & MAÇ TAKVİMİ -->
+    <section class="tab-panel" id="tab-fixtures">
+      <div class="card calendar-card">
+        <!-- Takvim Üst Kontrol Barı -->
+        <div class="card-header calendar-topbar">
+          <div class="card-title">
+            <i class="ri-calendar-2-line"></i> <span data-i18n="calTitle">Amedspor Sezon Maç Takvimi</span>
+          </div>
+
+          <div class="calendar-nav-controls">
+            <button class="card-action" id="calPrevMonthBtn" title="Önceki Ay">
+              <i class="ri-arrow-left-s-line"></i>
+            </button>
+            <div class="calendar-current-month" id="calMonthTitle">Ekim 2026</div>
+            <button class="card-action" id="calNextMonthBtn" title="Sonraki Ay">
+              <i class="ri-arrow-right-s-line"></i>
+            </button>
+            <button class="card-action" id="calTodayBtn">
+              <i class="ri-focus-2-line"></i> <span data-i18n="calThisMonth">Bu Ay</span>
+            </button>
+          </div>
+
+          <div class="filter-group" id="fixtureViewModeGroup">
+            <button class="filter-btn active" data-view="calendar">
+              <i class="ri-calendar-todo-line"></i> <span data-i18n="viewCalendar">Takvim</span>
+            </button>
+            <button class="filter-btn" data-view="list">
+              <i class="ri-list-check-2"></i> <span data-i18n="viewList">Liste</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sezon Ayları Hızlı Geçiş Şeridi -->
+        <div class="calendar-month-strip" id="calMonthStrip"></div>
+
+        <!-- TAKVİM GÖRÜNÜMÜ -->
+        <div id="fixturesCalendarView">
+          <!-- 7 Gün Başlığı (Pzt - Paz) -->
+          <div class="calendar-weekdays" id="calendarWeekdays">
+            <div>Pazartesi</div>
+            <div>Salı</div>
+            <div>Çarşamba</div>
+            <div>Perşembe</div>
+            <div>Cuma</div>
+            <div>Cumartesi</div>
+            <div>Pazar</div>
+          </div>
+
+          <!-- Takvim Gün Hücreleri -->
+          <div class="calendar-grid" id="calendarGrid"></div>
+
+          <!-- Mobilde Bu Ayki Karşılaşmalar Listesi -->
+          <div class="cal-mobile-matches-section" id="calMobileMatchesSection">
+            <div class="cal-mobile-matches-header">
+              <i class="ri-football-line" style="color:var(--amed-green);"></i>
+              <span id="calMobileMatchesTitle">Bu Ayki Karşılaşmalar</span>
+            </div>
+            <div class="cal-mobile-matches-list" id="calMobileMatchesList"></div>
+          </div>
+
+          <!-- Takvim Alt Bilgi & Renk Açıklaması -->
+          <div class="calendar-legend">
+            <div class="legend-items">
+              <span class="legend-item"><span class="legend-dot win"></span> <span data-i18n="legWin">Galibiyet</span></span>
+              <span class="legend-item"><span class="legend-dot draw"></span> <span data-i18n="legDraw">Beraberlik</span></span>
+              <span class="legend-item"><span class="legend-dot loss"></span> <span data-i18n="legLoss">Mağlubiyet</span></span>
+              <span class="legend-item"><span class="legend-dot upcoming"></span> <span data-i18n="legUpcoming">Yaklaşan Maç</span></span>
+            </div>
+            <div class="legend-hint">
+              <i class="ri-cursor-line"></i> <span data-i18n="calClickHint">Önceki maç detayları ve istatistikler için maç gününe tıklayın</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LİSTE GÖRÜNÜMÜ (İsteğe Bağlı Geçiş) -->
+        <div id="fixturesListView" style="display: none;">
+          <div style="padding: 0.85rem 1.35rem; background: var(--bg-page); border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);" data-i18n="allSeasonMatches">Sezonun Tüm Karşılaşmaları</span>
+            <div class="filter-group" id="fixtureFilterGroup">
+              <button class="filter-btn active" data-filter="all">
+                <i class="ri-list-check"></i> <span data-i18n="filterAll">Tümü</span>
+              </button>
+              <button class="filter-btn" data-filter="finished">
+                <i class="ri-checkbox-circle-line"></i> <span data-i18n="filterFinished">Oynananlar</span>
+              </button>
+              <button class="filter-btn" data-filter="upcoming">
+                <i class="ri-time-line"></i> <span data-i18n="filterUpcoming">Yaklaşanlar</span>
+              </button>
+            </div>
+          </div>
+          <div class="match-list" id="fullFixturesList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 2.5: ÖNCEKİ MAÇ DETAYLARI (AYRI VE KAPSAMLI MAÇ SONU ANALİZLERİ) -->
+    <section class="tab-panel" id="tab-past-details">
+      <div class="card" style="margin-bottom: 1.25rem;">
+        <div class="card-header" style="flex-wrap: wrap;">
+          <div>
+            <div class="card-title">
+              <i class="ri-file-chart-line"></i> <span data-i18n="pastDetailsHeader">Amedspor Önceki Maç Detayları &amp; İstatistik Raporları</span>
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.2rem;" data-i18n="pastDetailsSub">
+              Oynanan her karşılaşmanın gol dakikaları, dizilişleri, hakemi, karşılaştırmalı temel istatistikleri ve 28 verilik tam maç raporu
+            </div>
+          </div>
+          <div class="filter-group" id="pastResultFilterGroup">
+            <button class="filter-btn active" data-rfilter="ALL">
+              <i class="ri-apps-2-line"></i> <span data-i18n="filterAllPlayed">Tüm Oynananlar</span>
+            </button>
+            <button class="filter-btn" data-rfilter="W">
+              <i class="ri-trophy-line"></i> <span data-i18n="legWin">Galibiyet</span>
+            </button>
+            <button class="filter-btn" data-rfilter="D">
+              <i class="ri-equalizer-line"></i> <span data-i18n="legDraw">Beraberlik</span>
+            </button>
+            <button class="filter-btn" data-rfilter="L">
+              <i class="ri-error-warning-line"></i> <span data-i18n="legLoss">Mağlubiyet</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="past-details-grid" id="pastDetailsGrid"></div>
+    </section>
+
+    <!-- SEKME 3: PUAN DURUMU -->
+    <section class="tab-panel" id="tab-standings">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="ri-trophy-line"></i> <span data-i18n="standingsFullTitle">Trendyol Süper Lig Canlı Puan Durumu</span>
+          </div>
+          <div style="display: flex; gap: 1rem; font-size: 0.76rem; color: var(--text-secondary); flex-wrap: wrap;">
+            <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: var(--amed-green);"></span> <span data-i18n="uclSpot">Şampiyonlar Ligi</span>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: #2563eb;"></span> <span data-i18n="uelSpot">Avrupa Kupaları</span>
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+              <span style="width: 10px; height: 10px; border-radius: 3px; background: var(--amed-red);"></span> <span data-i18n="relSpot">Düşme Hattı</span>
+            </span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="standings-table">
+            <thead>
+              <tr>
+                <th data-i18n="thRank">Sıra</th>
+                <th class="col-team" data-i18n="thClub">Takım</th>
+                <th data-i18n="thP">O</th>
+                <th data-i18n="thW">G</th>
+                <th data-i18n="thD">B</th>
+                <th data-i18n="thL">M</th>
+                <th data-i18n="thGF">AG</th>
+                <th data-i18n="thGA">YG</th>
+                <th data-i18n="thGD">AV</th>
+                <th data-i18n="thPts">Puan</th>
+              </tr>
+            </thead>
+            <tbody id="fullStandingsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEKME 4: AMEDSPOR KADROSU -->
+    <section class="tab-panel" id="tab-squad">
+      <div class="squad-controls">
+        <div class="filter-group" id="posFilterGroup">
+          <button class="filter-btn active" data-pos="ALL">
+            <i class="ri-team-line"></i> <span data-i18n="posAll">Tüm Kadro</span>
+          </button>
+          <button class="filter-btn" data-pos="G">
+            <i class="ri-shield-user-line"></i> <span data-i18n="posGK">Kaleci</span>
+          </button>
+          <button class="filter-btn" data-pos="D">
+            <i class="ri-shield-star-line"></i> <span data-i18n="posDEF">Defans</span>
+          </button>
+          <button class="filter-btn" data-pos="M">
+            <i class="ri-compass-3-line"></i> <span data-i18n="posMID">Orta Saha</span>
+          </button>
+          <button class="filter-btn" data-pos="F">
+            <i class="ri-flashlight-line"></i> <span data-i18n="posFWD">Forvet</span>
+          </button>
+        </div>
+
+        <div class="search-wrap">
+          <i class="ri-search-line"></i>
+          <input
+            type="text"
+            class="search-input"
+            id="playerSearchInput"
+            placeholder="Futbolcu adı, mevki veya ülke ara..."
+          />
+        </div>
+      </div>
+
+      <div class="squad-grid" id="squadGrid"></div>
+    </section>
+
+    <!-- SEKME 5: HAFTANIN MAÇLARI -->
+    <section class="tab-panel" id="tab-superlig">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="ri-football-line"></i> <span data-i18n="matchweekTitle">Süper Lig Haftanın Maçları ve Canlı Skorlar</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button class="card-action" id="prevRoundBtn">
+              <i class="ri-arrow-left-s-line"></i> <span data-i18n="btnPrev">Önceki</span>
+            </button>
+            <select id="roundSelect" class="round-select"></select>
+            <button class="card-action" id="nextRoundBtn">
+              <span data-i18n="btnNext">Sonraki</span> <i class="ri-arrow-right-s-line"></i>
+            </button>
+          </div>
+        </div>
+        <div class="match-list" id="roundMatchesList"></div>
+      </div>
+    </section>
+
+    <!-- SEKME 6: TARAFTAR GÖNDERİLERİ (TWITTER / X TIMELINE) -->
+    <section class="tab-panel" id="tab-forum">
+      <div class="tw-layout">
+        <!-- Sol / Ana Alan: Twitter Timeline Akışı & Tweet Gönderici -->
+        <main class="tw-main-feed" id="forumMain">
+          <div class="card forum-empty"><i class="ri-loader-4-line spin"></i> Yükleniyor...</div>
+        </main>
+
+        <!-- Sağ Alan: Twitter Yan Panel (Gündemler & Kimi Takip Etmeli) -->
+        <aside class="tw-sidebar">
+          <div class="tw-search-card card">
+            <i class="ri-search-line"></i>
+            <input type="search" id="forumSearch" placeholder="Gönderilerde ve etiketlerde ara..." />
+          </div>
+
+          <!-- Gündemdekiler (Trends) -->
+          <div class="tw-sidebar-card card">
+            <div class="tw-sidebar-header">
+              <span class="tw-sidebar-title"><i class="ri-fire-fill" style="color:var(--amed-red);"></i> Gündemdekiler</span>
+            </div>
+            <div class="tw-trends-list" id="twSidebarTrendsList">
+              <div class="tw-trend-empty" style="padding:1rem; color:var(--text-muted); font-size:0.85rem; text-align:center;">
+                <i class="ri-hashtag"></i> Henüz kullanıcı etiketi yok.
+              </div>
+            </div>
+          </div>
+
+          <!-- Kimi Takip Etmeli -->
+          <div class="tw-sidebar-card card">
+            <div class="tw-sidebar-header">
+              <span class="tw-sidebar-title"><i class="ri-user-star-line"></i> Kimi Takip Etmeli</span>
+            </div>
+            <div class="tw-follow-list" id="twSidebarFollowList">
+              <div class="tw-follow-item">
+                <img src="/logos/132335.png" class="tw-follow-avatar" alt="Amedspor" />
+                <div class="tw-follow-info">
+                  <div class="tw-follow-name">Amedspor <i class="ri-verified-badge-fill verified-badge"></i></div>
+                  <div class="tw-follow-handle">@amedskofficial</div>
+                </div>
+                <a href="https://x.com/amedskofficial" target="_blank" rel="noopener noreferrer" class="tw-follow-btn">Takip Et</a>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- SEKME 7: PROFİL SAYFASI (KULLANICININ PROFİLİ VE GÖNDERİLERİ) -->
+    <section class="tab-panel" id="tab-profile">
+      <div id="profilePageContent"></div>
+    </section>
+
+    <!-- SEKME 8: AYARLAR SAYFASI (AYRI DÜZENLİ AYARLAR) -->
+    <section class="tab-panel" id="tab-settings">
+      <div id="settingsPageContent"></div>
+    </section>
+  </main>
+    </div> <!-- /.app-main-content -->
+  </div> <!-- /#appShell -->
+
+  <!-- MAÇ DETAY VE DERİN İSTATİSTİK MODALI -->
+  <div class="modal-backdrop" id="matchModal">
+    <div class="modal-window modal-window-wide">
+      <div class="modal-top">
+        <div class="modal-close-row">
+          <span id="modalMetaText"><i class="ri-trophy-line"></i> Trendyol Süper Lig</span>
+          <button class="btn-close" id="closeModalBtn" title="Kapat">
+            <i class="ri-close-line"></i>
+          </button>
+        </div>
+        <div class="modal-scoreboard" id="modalScoreboard"></div>
+        <div class="modal-scorers-row" id="modalScorersRow"></div>
+      </div>
+
+      <div class="modal-subtabs" id="modalTabs">
+        <button class="filter-btn active" data-mtab="summary">
+          <i class="ri-pulse-line"></i> <span data-i18n="mtabSummary">Özet</span>
+        </button>
+        <button class="filter-btn" data-mtab="stats">
+          <i class="ri-bar-chart-horizontal-line"></i> <span data-i18n="mtabStats">İstatistikler</span>
+        </button>
+        <button class="filter-btn" data-mtab="lineups">
+          <i class="ri-shirt-line"></i> <span data-i18n="mtabLineups">Kadrolar</span>
+        </button>
+        <button class="filter-btn" data-mtab="commentary">
+          <i class="ri-broadcast-line"></i> <span data-i18n="mtabCommentary">Canlı Anlatım</span>
+        </button>
+        <button class="filter-btn" data-mtab="previous">
+          <i class="ri-history-line"></i> <span data-i18n="mtabPrevious">Önceki Maçlar</span>
+        </button>
+      </div>
+
+      <div class="modal-body" id="modalBodyContent"></div>
+    </div>
+  </div>
+
+  <!-- Resim Kırpma Modalı (Avatar ve Banner Kırpıcı) -->
+  <div class="c-backdrop" id="cropModal" style="display:none; z-index:9999;">
+    <div class="crop-modal-box">
+      <div class="crop-modal-header">
+        <div class="crop-modal-title"><i class="ri-crop-2-line"></i> <span id="cropModalTitle">Görseli Kırp ve Ayarla</span></div>
+        <button type="button" class="btn-close" id="btnCancelCrop" title="İptal"><i class="ri-close-line"></i></button>
+      </div>
+      <div class="crop-modal-body">
+        <div class="crop-container">
+          <img id="cropImageTarget" src="" alt="Kırpılacak Görsel" />
+        </div>
+        <div class="crop-toolbar">
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomIn" title="Yakınlaştır"><i class="ri-zoom-in-line"></i> Yakınlaştır</button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomOut" title="Uzaklaştır"><i class="ri-zoom-out-line"></i> Uzaklaştır</button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnRotate" title="Döndür"><i class="ri-refresh-line"></i> Döndür</button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnReset" title="Sıfırla"><i class="ri-aspect-ratio-line"></i> Sıfırla</button>
+        </div>
+      </div>
+      <div class="crop-modal-footer">
+        <button type="button" class="c-btn c-btn-ghost" id="btnCropDismiss">Vazgeç</button>
+        <button type="button" class="c-btn c-btn-primary" id="btnCropConfirm"><i class="ri-check-line"></i> Kırp ve Onayla</button>
+      </div>
+    </div>
+  </div>
+
+  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+  <script src="/app.js?v=16"></script>
+  <script type="module" src="/community.js?v=11"></script>
+</body>
+</html>
