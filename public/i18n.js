@@ -442,18 +442,18 @@ const I18N = {
       "Yekşem"
     ],
     "months": [
-      "Rêbendan",
+      "Çile",
       "Reşemî",
       "Adar",
       "Avrêl",
       "Gulan",
-      "Pûşper",
+      "Hezîran",
       "Tîrmeh",
-      "Gelawêj",
-      "Rezber",
-      "Kewçêr",
-      "Sermawez",
-      "Berfanbar"
+      "Tebax",
+      "Îlon",
+      "Cotmeh",
+      "Mijdar",
+      "Kanûn"
     ],
     "shortMonths": [
       "Rêb",
@@ -461,11 +461,11 @@ const I18N = {
       "Ada",
       "Avr",
       "Gul",
-      "Pûş",
+      "Hez",
       "Tîr",
-      "Gel",
-      "Rez",
-      "Kew",
+      "Te",
+      "ÎL",
+      "Cot",
       "Ser",
       "Ber"
     ],
