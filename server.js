@@ -2001,6 +2001,38 @@ async function checkOnlineNSFW(buffer, ext) {
   }
 }
 
+// Harici Online Resim Barındırma Servisi (Catbox.moe - Kalıcı ve Ücretsiz Doğrudan Resim Linki)
+async function uploadToExternalImageHost(buffer, ext) {
+  try {
+    const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
+    const mime = mimeMap[ext] || 'image/jpeg';
+    const filename = `amed_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+
+    const fd = new FormData();
+    fd.append('reqtype', 'fileupload');
+    const blob = new Blob([buffer], { type: mime });
+    fd.append('fileToUpload', blob, filename);
+
+    const res = await fetch('https://catbox.moe/user/api.php', {
+      method: 'POST',
+      body: fd,
+      signal: AbortSignal.timeout(12000)
+    });
+
+    if (res.ok) {
+      const urlText = (await res.text()).trim();
+      if (urlText.startsWith('https://files.catbox.moe/')) {
+        console.log('Harici hosting yüklemesi başarılı:', urlText);
+        return urlText;
+      }
+    }
+    console.warn('Harici hosting (Catbox) beklenmeyen durum kodu:', res.status);
+  } catch (err) {
+    console.warn('Harici hosting (Catbox) upload uyarısı:', err.message);
+  }
+  return null;
+}
+
   // Bağımsız Online NSFW Denetim Uç Noktası
   if (req.method === 'POST' && pathname === '/api/check-nsfw') {
     try {
@@ -2081,10 +2113,14 @@ async function checkOnlineNSFW(buffer, ext) {
       const destPath = path.resolve(uploadsDir, filename);
       fs.writeFileSync(destPath, buffer);
 
+      // 1. Harici Online Resim Barındırma Servisine Yükle (Catbox.moe - Doğrudan ve Kalıcı Dış Link)
+      const externalUrl = await uploadToExternalImageHost(buffer, ext);
+
+      // 2. Yedek olarak Supabase Cloud Storage'a da yükle (Dış servisin kesintiye uğraması durumunda kesintisiz süreklilik)
       const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
       const remoteFolder = isAvatar ? 'avatars' : 'posts';
       const remotePath = `${remoteFolder}/${filename}`;
-      let publicUrl = isAvatar ? `/uploads/avatars/${filename}` : `/uploads/${filename}`;
+      let cloudFallbackUrl = null;
 
       try {
         const sbUploadRes = await fetch(`${SUPABASE_STORAGE_URL}/storage/v1/object/uploads/${remotePath}`, {
@@ -2098,20 +2134,24 @@ async function checkOnlineNSFW(buffer, ext) {
           body: buffer
         });
         if (sbUploadRes.ok) {
-          publicUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/uploads/${remotePath}`;
+          cloudFallbackUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/uploads/${remotePath}`;
         } else {
           const errTxt = await sbUploadRes.text();
-          console.warn('Supabase Storage upload warning:', sbUploadRes.status, errTxt);
+          console.warn('Supabase Storage yedek upload uyarısı:', sbUploadRes.status, errTxt);
         }
       } catch (sbErr) {
         console.warn('Supabase Storage network error:', sbErr.message);
       }
 
+      // Öncelik harici hosting doğrudan bağlantısındadır (örneğin: https://files.catbox.moe/xxxxxx.jpg)
+      const finalUrl = externalUrl || cloudFallbackUrl || (isAvatar ? `/uploads/avatars/${filename}` : `/uploads/${filename}`);
+
       return sendJson(res, {
         ok: true,
-        url: publicUrl,
-        avatarUrl: publicUrl,
-        bannerUrl: publicUrl
+        url: finalUrl,
+        avatarUrl: finalUrl,
+        bannerUrl: finalUrl,
+        source: externalUrl ? 'external_catbox' : 'supabase_cloud'
       });
     } catch (err) {
       console.error('Image upload failed:', err);
