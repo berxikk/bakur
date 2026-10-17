@@ -9,596 +9,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 /* ---------- ÇEVİRİLER ---------- */
-const CI18N = {
-  tr: {
-    navForum: 'Forum',
-    login: 'Giriş Yap',
-    logout: 'Çıkış Yap',
-    signup: 'Kayıt Ol',
-    email: 'E-posta',
-    emailOrUsername: 'E-posta adresi',
-    usernameNotFound: 'Bu kullanıcı adına ait bir hesap bulunamadı.',
-    password: 'Şifre',
-    username: 'Kullanıcı adı',
-    displayName: 'Görünen ad',
-    forgot: 'Şifremi unuttum',
-    google: 'Google ile devam et',
-    or: 'veya',
-    haveAccount: 'Hesabın var mı?',
-    noAccount: 'Hesabın yok mu?',
-    loginTitle: 'Tekrar hoş geldin',
-    loginSub: 'Forumda yazmak ve beğenmek için giriş yap.',
-    signupTitle: 'Amed ailesine katıl',
-    signupSub: 'Ücretsiz hesap oluştur, tartışmalara katıl.',
-    resetTitle: 'Şifre sıfırlama',
-    resetSub: 'E-posta adresine sıfırlama bağlantısı gönderelim.',
-    sendReset: 'Bağlantı gönder',
-    backToLogin: 'Girişe dön',
-    updateTitle: 'Yeni şifre belirle',
-    newPassword: 'Yeni şifre',
-    savePassword: 'Şifreyi kaydet',
-    checkEmail: 'Kayıt tamam! Hesabını doğrulamak için e-postanı kontrol et.',
-    resetSent: 'Sıfırlama bağlantısı e-postana gönderildi.',
-    passwordUpdated: 'Şifren güncellendi.',
-    welcome: 'Hoş geldin',
-    loggedOut: 'Çıkış yapıldı.',
-    navPosts: 'Gönderiler',
-    timelineTitle: 'Gönderiler',
-    streamAll: 'Tümü (Canlı)',
-    streamOfficial: 'Kulüp Resmi',
-    streamFans: 'Taraftar',
-    streamTwitter: 'Canlı X (Twitter)',
-    streamProfile: 'Profilim',
-    myPosts: 'Gönderilerim',
-    myPostsCount: 'Gönderi',
-    totalLikesReceived: 'Beğeni',
-    profileBioEmpty: 'Henüz biyografi eklenmedi.',
-    profileEmptyPosts: 'Henüz hiçbir gönderi paylaşmadınız.',
-    profileEmptyPostsCta: 'Amedspor hakkındaki duygu ve düşüncelerini hemen paylaş!',
-    loginToViewProfile: 'Kendi profilinizi ve gönderilerinizi görmek için lütfen giriş yapın.',
-    loginToViewProfileDesc: 'Profil detaylarınızı görüntülemek, avatarınızı düzenlemek ve paylaştığınız gönderileri yönetmek için giriş yapın.',
-    editProfile: 'Profili Düzenle',
-    viewInFeed: 'Akışta Gör',
-    postsTab: 'Gönderilerim',
-    officialReadMore: 'Resmi Sitede Oku',
-    forYou: 'Sana Özel',
-    popular: 'Popüler',
-    composerPlaceholder: 'Neler oluyor? Bir etiket (#) ile düşüncelerini paylaş...',
-    tweetBtn: 'Gönder',
-    trendingTitle: 'Gündemdekiler',
-    guestBannerTitle: 'Amedspor Taraftar Akışına Katıl',
-    guestBannerSub: 'Düşüncelerini anında paylaş, taraftarlarla etkileşime geç.',
-    share: 'Paylaş',
-    copied: 'Gönderi bağlantısı panoya kopyalandı!',
-    sharePrompt: 'Bu gönderinin bağlantısı:',
-    noPosts: 'Henüz gönderi yok. İlk gönderiyi sen paylaş!',
-    replies: 'yanıt',
-    backToTimeline: 'Gönderilere dön',
-    replyPlaceholder: 'Yanıtını gönder...',
-    replyBtn: 'Yanıtla',
-    loginToPost: 'Gönderi paylaşmak için giriş yap',
-    loginRequired: 'Bu işlem için giriş yapmalısın.',
-    title: 'Başlık',
-    body: 'İçerik',
-    category: 'Kategori',
-    publish: 'Yayınla',
-    cancel: 'Vazgeç',
-    del: 'Sil',
-    confirmDeleteThread: 'Bu konuyu silmek istediğine emin misin?',
-    confirmDeletePost: 'Bu yanıtı silmek istediğine emin misin?',
-    deleted: 'Silindi.',
-    profile: 'Profil',
-    profileSettings: 'Profil & Ayarlar',
-    settings: 'Ayarlar',
-    generalTab: 'Profil',
-    fanTab: 'Taraftar Tercihleri',
-    securityTab: 'Güvenlik & Şifre',
-    adminTab: 'Admin Paneli',
-    bio: 'Biyografi / Taraftar Mesajı',
-    bioPlaceholder: 'Örn: Diren Amedspor! Yeşil Kırmızı Sevdamız...',
-    favoritePlayer: 'Favori Futbolcun',
-    selectPlayer: 'Amedspor kadrosundan seç...',
-    avatarSelect: 'Profil Avatarı Seç',
-    uploadCustomAvatar: 'Kendi Fotoğrafını Yükle',
-    uploadHint: 'PNG, JPG, WEBP (Maks. 5MB)',
-    orPresetAvatars: 'veya hazır kulüp avatarlarından seç:',
-    nsfwScanning: 'Yapay Zeka +18 & NSFW filtresi taranıyor...',
-    nsfwBlockedTitle: 'Uygunsuz Görsel Engellendi (+18 / NSFW)',
-    nsfwBlockedDesc: 'Topluluk kurallarımız gereği müstehcen veya +18 içerikli profil fotoğraflarına izin verilmemektedir.',
-    nsfwPassed: 'Görsel Onaylandı!',
-    nsfwPassedDesc: 'NSFW ve +18 güvenlik filtrelerini başarıyla geçti.',
-    fileTooLarge: 'Dosya boyutu 5 MB\'tan küçük olmalıdır.',
-    notifications: 'Bildirim Ayarları',
-    notifGoals: 'Canlı Maç & Gol Bildirimleri',
-    notifForum: 'Forum Yanıt Bildirimleri',
-    currentEmail: 'Kayıtlı E-posta',
-    changePassword: 'Şifre Değiştir',
-    newPasswordPlaceholder: 'En az 6 karakter yeni şifre',
-    adminBadge: 'ADMIN',
-    adminPanelTitle: 'Yönetim & Moderatör Paneli',
-    adminRoleDesc: 'Amedspor Live Hub Sistem & Forum Yöneticisi',
-    adminStats: 'Forum İstatistikleri',
-    adminThreadsCount: 'Toplam Konu',
-    adminPostsCount: 'Toplam Yorum',
-    adminPowers: 'Yönetici Yetkileri',
-    adminPower1: 'Herhangi bir konuyu sabitleme ve kaldırma',
-    adminPower2: 'Herhangi bir konuyu yanıtlara kilitleme ve açma',
-    adminPower3: 'Uygunsuz konu ve yanıtları anında silme',
-    pin: 'Sabitle',
-    unpin: 'Sabitlemeyi Kaldır',
-    lock: 'Kilitle',
-    unlock: 'Kilidi Aç',
-    pinned: 'Sabitlendi',
-    unpinned: 'Sabitleme kaldırıldı.',
-    locked: 'Kilitlendi',
-    unlocked: 'Kilit açıldı.',
-    threadLocked: 'Bu konu kilitlenmiştir. Yeni yanıt gönderilemez.',
-    profileTitle: 'Profil & Ayarlar',
-    save: 'Kaydet',
-    saved: 'Kaydedildi.',
-    loadMore: 'Daha fazla göster',
-    noReplies: 'Henüz yanıt yok. İlk yanıtı sen yaz.',
-    threadCreated: 'Konu yayınlandı.',
-    replySent: 'Yanıtınız paylaşıldı.',
-    errorGeneric: 'Bir hata oluştu. Lütfen tekrar dene.',
-    invalidUsername: 'Kullanıcı adı 3-24 karakter olmalı (harf, rakam, _ ve .).',
-    usernameTaken: 'Bu kullanıcı adı alınmış.',
-    minPassword: 'Şifre en az 6 karakter olmalı.',
-    invalidCredentials: 'E-posta veya şifre hatalı.',
-    emailNotConfirmed: 'E-posta adresin henüz doğrulanmamış.',
-    justNow: 'az önce',
-    loading: 'Yükleniyor...',
-    titleTooShort: 'Başlık en az 4 karakter olmalı.',
-    liveBadge: 'Canlı',
-    newPostsAvailable: 'yeni gönderi',
-    languageSelect: 'Uygulama Dili / Ziman',
-    securityActive: 'Sistem ve Veritabanı Güvenliği Aktif',
-    auditLogs: 'Yönetici İşlem Günlüğü (Audit Log)',
-    noAuditLogs: 'Henüz denetim kaydı bulunmuyor.',
-    roleSecurityNote: 'Veritabanı Rol Güvenliği: Yetkisiz rol değiştirme ve ayrıcalık yükseltme engellenmiştir.',
-    rateLimitNote: 'Spam Koruması: Konu (15sn) ve yanıt (5sn) hız limiti aktif.'
-  },
-  ku: {
-    navForum: 'Forum',
-    login: 'Têkeve',
-    logout: 'Derkeve',
-    signup: 'Tomar bibe',
-    email: 'E-name',
-    emailOrUsername: 'E-name an Navê bikarhêner',
-    usernameNotFound: 'Hesabek bi vî navê bikarhêner nehate dîtin.',
-    password: 'Şîfre',
-    username: 'Navê bikarhêner',
-    displayName: 'Navê xuyabûnê',
-    forgot: 'Min şîfre ji bîr kir',
-    google: 'Bi Google bidomîne',
-    or: 'an jî',
-    haveAccount: 'Hesabê te heye?',
-    noAccount: 'Hesabê te tune?',
-    loginTitle: 'Dîsa bi xêr hatî',
-    loginSub: 'Ji bo nivîsandin û ecibandinê têkeve.',
-    signupTitle: 'Tevlî malbata Amedê bibe',
-    signupSub: 'Hesabekî belaş çêke û tevlî nîqaşan bibe.',
-    resetTitle: 'Nûkirina şîfreyê',
-    resetSub: 'Em ê girêdanekê ji e-nameya te re bişînin.',
-    sendReset: 'Girêdanê bişîne',
-    backToLogin: 'Vegere têketinê',
-    updateTitle: 'Şîfreya nû diyar bike',
-    newPassword: 'Şîfreya nû',
-    savePassword: 'Şîfreyê tomar bike',
-    checkEmail: 'Tomarbûn temam! Ji bo piştrastkirinê e-nameya xwe kontrol bike.',
-    resetSent: 'Girêdana nûkirinê ji e-nameya te re hat şandin.',
-    passwordUpdated: 'Şîfreya te hat nûkirin.',
-    welcome: 'Bi xêr hatî',
-    loggedOut: 'Te derket.',
-    navPosts: 'Parvekirin',
-    timelineTitle: 'Parvekirin',
-    streamAll: 'Hemû (Zindî)',
-    streamOfficial: 'Klûb Fermî',
-    streamFans: 'Alîgir',
-    streamTwitter: 'Zindî X (Twitter)',
-    streamProfile: 'Profîla Min',
-    myPosts: 'Parvekirinên Min',
-    myPostsCount: 'Parvekirin',
-    totalLikesReceived: 'Ecibandin',
-    profileBioEmpty: 'Hê bîyografî nehatiye zêdekirin.',
-    profileEmptyPosts: 'Hê tu parvekirinek nekiriye.',
-    profileEmptyPostsCta: 'Ramanên xwe li ser Amedsporê niha parve bike!',
-    loginToViewProfile: 'Ji bo dîtina profîl û parvekirinên xwe keremke têkeve.',
-    loginToViewProfileDesc: 'Ji bo dîtina hûrguliyên profîlê, sererastkirina avatarê û birêvebirina parvekirinan têkeve.',
-    editProfile: 'Profîlê Biguherîne',
-    viewInFeed: 'Di Herikînê de Bibîne',
-    postsTab: 'Parvekirinên Min',
-    officialReadMore: 'Li Malpera Fermî Bixwîne',
-    forYou: 'Ji Bo Te',
-    popular: 'Populer',
-    composerPlaceholder: 'Çi diqewime? Bi etîketekê (#) ramanên xwe parve bike...',
-    tweetBtn: 'Bişîne',
-    trendingTitle: 'Rojev',
-    guestBannerTitle: 'Tevlî Herikîna Alîgirên Amedsporê Bibe',
-    guestBannerSub: 'Bîr û ramanên xwe di cih de parve bike, bi alîgiran re bikeve têkiliyê.',
-    share: 'Parve bike',
-    copied: 'Girêdana parvekirinê hat kopîkirin!',
-    sharePrompt: 'Girêdana vê peyamê:',
-    noPosts: 'Hîn parvekirinek tune ye. Ya yekem tu parve bike!',
-    replies: 'bersiv',
-    backToTimeline: 'Vegere parvekirinan',
-    replyPlaceholder: 'Bersiva xwe bişîne...',
-    replyBtn: 'Bersiv bide',
-    loginToPost: 'Ji bo parvekirinê têkeve',
-    loginRequired: 'Ji bo vê yekê divê tu têkevî.',
-    title: 'Sernav',
-    body: 'Naverok',
-    category: 'Kategorî',
-    publish: 'Biweşîne',
-    cancel: 'Betal',
-    del: 'Jê bibe',
-    confirmDeleteThread: 'Tu bawer î ku dixwazî vê mijarê jê bibî?',
-    confirmDeletePost: 'Tu bawer î ku dixwazî vê bersivê jê bibî?',
-    deleted: 'Hat jêbirin.',
-    profile: 'Profîl',
-    profileSettings: 'Profîl & Mîheng',
-    settings: 'Mîheng',
-    generalTab: 'Profîl',
-    fanTab: 'Vebijarkên Alîgir',
-    securityTab: 'Ewlehî & Şîfre',
-    adminTab: 'Panela Admin',
-    bio: 'Biyografî / Peyama Alîgir',
-    bioPlaceholder: 'Mînak: Berxwedan Amedspor! Evîna Kesk û Sor...',
-    favoritePlayer: 'Futbolvanê te yê bijare',
-    selectPlayer: 'Ji kadroya Amedsporê hilbijêre...',
-    avatarSelect: 'Wêneya Profîlê Hilbijêre',
-    uploadCustomAvatar: 'Wêneyê Xwe Bar Bike',
-    uploadHint: 'PNG, JPG, WEBP (Herî zêde 5MB)',
-    orPresetAvatars: 'an ji amadeyên klûbê hilbijêre:',
-    nsfwScanning: 'Parzûna AI +18 & NSFW tê kontrolkirin...',
-    nsfwBlockedTitle: 'Wêneyê Neguncaw Hat Astengkirin (+18 / NSFW)',
-    nsfwBlockedDesc: 'Li gorî rêzikên civakê, wêneyên nebaş an +18 nayên qebûlkirin.',
-    nsfwPassed: 'Wêne Hat Pejirandin!',
-    nsfwPassedDesc: 'Parzûnên ewlehiyê yên NSFW û +18 bi serkeftî derbas bûn.',
-    fileTooLarge: 'Mezinahiya pelê divê ji 5 MB kêmtir be.',
-    notifications: 'Vebijarkên Agahdariyê',
-    notifGoals: 'Agahdariyên Zindî yên Gol û Maçan',
-    notifForum: 'Agahdariyên Bersivên Forumê',
-    currentEmail: 'E-nameya Tomarkirî',
-    changePassword: 'Şîfreyê Biguherîne',
-    newPasswordPlaceholder: 'Kêmasî 6 tîp şîfreya nû',
-    adminBadge: 'ADMIN',
-    adminPanelTitle: 'Panela Rêvebir & Moderasyonê',
-    adminRoleDesc: 'Rêvebirê Sîstem û Forumê ya Amedspor Live Hub',
-    adminStats: 'Statîstîkên Forumê',
-    adminThreadsCount: 'Mijarên Giştî',
-    adminPostsCount: 'Bersivên Giştî',
-    adminPowers: 'Desthilatdariyên Admin',
-    adminPower1: 'Pêvekirin û rakirina mijaran (Pin / Unpin)',
-    adminPower2: 'Qifilkirin û vekirina mijaran (Lock / Unlock)',
-    adminPower3: 'Jêbirina rasterast a mijar û bersivan',
-    pin: 'Pêve bike',
-    unpin: 'Pêvekirinê Rake',
-    lock: 'Qifil bike',
-    unlock: 'Qifilê Veke',
-    pinned: 'Hat pêvekirin',
-    unpinned: 'Pêvekirin hat rakirin.',
-    locked: 'Hat qifilkirin',
-    unlocked: 'Qifil hat vekirin.',
-    threadLocked: 'Ev mijar hatiye qifilkirin. Bersiva nû nayê şandin.',
-    profileTitle: 'Profîl & Mîheng',
-    save: 'Tomar bike',
-    saved: 'Hat tomarkirin.',
-    loadMore: 'Zêdetir nîşan bide',
-    noReplies: 'Hîn bersiv tune. Bersiva yekem tu binivîse.',
-    threadCreated: 'Mijar hat weşandin.',
-    replySent: 'Bersiva te hat weşandin.',
-    errorGeneric: 'Çewtiyek çêbû. Ji kerema xwe dîsa biceribîne.',
-    invalidUsername: 'Navê bikarhêner divê 3-24 tîp be (tîp, hejmar, _ û .).',
-    usernameTaken: 'Ev navê bikarhêner hatiye girtin.',
-    minPassword: 'Şîfre divê herî kêm 6 tîp be.',
-    invalidCredentials: 'E-name an şîfre şaş e.',
-    emailNotConfirmed: 'E-nameya te hîn nehatiye piştrastkirin.',
-    justNow: 'niha',
-    loading: 'Tê barkirin...',
-    titleTooShort: 'Sernav divê herî kêm 4 tîp be.',
-    liveBadge: 'Zindî',
-    newPostsAvailable: 'şandina nû',
-    languageSelect: 'Zimanê Serlêdanê',
-    securityActive: 'Ewlehiya Sîstem û Daneyan Çalak e',
-    auditLogs: 'Qeydên Kiryarên Admin (Audit Log)',
-    noAuditLogs: 'Hîn qeydek tune ye.',
-    roleSecurityNote: 'Ewlehiya Rolan: Guhertina ne-destûrdar a rolan hatiye astengkirin.',
-    rateLimitNote: 'Parastina Spamê: Sînorê lezê ya mijar (15s) û bersiv (5s) çalak e.'
-  },
-  en: {
-    navForum: 'Forum',
-    login: 'Sign In',
-    logout: 'Sign Out',
-    signup: 'Sign Up',
-    email: 'Email',
-    password: 'Password',
-    username: 'Username',
-    displayName: 'Display name',
-    forgot: 'Forgot password?',
-    google: 'Continue with Google',
-    or: 'or',
-    haveAccount: 'Already have an account?',
-    noAccount: 'Don\'t have an account?',
-    loginTitle: 'Welcome back',
-    loginSub: 'Sign in to post and like in the forum.',
-    signupTitle: 'Join the Amed family',
-    signupSub: 'Create a free account and join the discussion.',
-    resetTitle: 'Reset password',
-    resetSub: 'We\'ll send a reset link to your email.',
-    sendReset: 'Send link',
-    backToLogin: 'Back to sign in',
-    updateTitle: 'Set a new password',
-    newPassword: 'New password',
-    savePassword: 'Save password',
-    checkEmail: 'You\'re signed up! Check your email to confirm your account.',
-    resetSent: 'A reset link has been sent to your email.',
-    passwordUpdated: 'Your password has been updated.',
-    welcome: 'Welcome',
-    loggedOut: 'Signed out.',
-    navPosts: 'Posts',
-    timelineTitle: 'Posts',
-    streamAll: 'All (Live)',
-    streamOfficial: 'Official Club',
-    streamFans: 'Fans',
-    streamTwitter: 'Live X (Twitter)',
-    streamProfile: 'My Profile',
-    myPosts: 'My Posts',
-    myPostsCount: 'Posts',
-    totalLikesReceived: 'Likes',
-    profileBioEmpty: 'No bio added yet.',
-    profileEmptyPosts: 'You haven\'t shared any posts yet.',
-    profileEmptyPostsCta: 'Share your thoughts and passion for Amedspor now!',
-    loginToViewProfile: 'Please log in to view your profile and posts.',
-    loginToViewProfileDesc: 'Log in to view your profile details, customize your avatar, and manage your posts.',
-    editProfile: 'Edit Profile',
-    viewInFeed: 'View in Feed',
-    postsTab: 'My Posts',
-    officialReadMore: 'Read on Official Site',
-    forYou: 'For You',
-    popular: 'Popular',
-    composerPlaceholder: "What is happening? Share your thoughts with a hashtag (#)...",
-    tweetBtn: 'Post',
-    trendingTitle: 'Trends for you',
-    guestBannerTitle: 'Join the Amedspor Fan Timeline',
-    guestBannerSub: 'Share your thoughts instantly, engage with fellow fans.',
-    share: 'Share',
-    copied: 'Post link copied to clipboard!',
-    sharePrompt: 'Post link:',
-    noPosts: 'No posts yet. Be the first to share!',
-    replies: 'replies',
-    backToTimeline: 'Back to posts',
-    replyPlaceholder: 'Post your reply...',
-    replyBtn: 'Reply',
-    loginToPost: 'Sign in to post',
-    loginRequired: 'You need to sign in for this.',
-    title: 'Title',
-    body: 'Content',
-    category: 'Category',
-    publish: 'Publish',
-    cancel: 'Cancel',
-    del: 'Delete',
-    confirmDeleteThread: 'Are you sure you want to delete this topic?',
-    confirmDeletePost: 'Are you sure you want to delete this reply?',
-    deleted: 'Deleted.',
-    profile: 'Profile',
-    profileSettings: 'Profile & Settings',
-    settings: 'Settings',
-    generalTab: 'Profile',
-    fanTab: 'Fan Preferences',
-    securityTab: 'Security & Password',
-    adminTab: 'Admin Panel',
-    bio: 'Bio / Fan Message',
-    bioPlaceholder: 'e.g. Diren Amedspor! Green & Red Passion...',
-    favoritePlayer: 'Favorite Player',
-    selectPlayer: 'Select from Amedspor squad...',
-    avatarSelect: 'Select Profile Avatar',
-    uploadCustomAvatar: 'Upload Custom Photo',
-    uploadHint: 'PNG, JPG, WEBP (Max 5MB)',
-    orPresetAvatars: 'or choose from club presets:',
-    nsfwScanning: 'AI 18+ & NSFW filter scanning...',
-    nsfwBlockedTitle: 'Inappropriate Image Blocked (18+ / NSFW)',
-    nsfwBlockedDesc: 'According to community guidelines, explicit or 18+ profile pictures are not allowed.',
-    nsfwPassed: 'Image Approved!',
-    nsfwPassedDesc: 'Successfully passed NSFW and 18+ safety filters.',
-    fileTooLarge: 'File size must be less than 5 MB.',
-    notifications: 'Notifications',
-    notifGoals: 'Live Match & Goal Alerts',
-    notifForum: 'Forum Reply Notifications',
-    currentEmail: 'Registered Email',
-    changePassword: 'Change Password',
-    newPasswordPlaceholder: 'New password (min 6 chars)',
-    adminBadge: 'ADMIN',
-    adminPanelTitle: 'Admin & Moderation Panel',
-    adminRoleDesc: 'Amedspor Live Hub Administrator',
-    adminStats: 'Forum Stats',
-    adminThreadsCount: 'Total Topics',
-    adminPostsCount: 'Total Replies',
-    adminPowers: 'Administrator Permissions',
-    adminPower1: 'Pin and unpin any topic (Pin / Unpin)',
-    adminPower2: 'Lock and unlock topics for replies (Lock / Unlock)',
-    adminPower3: 'Delete any inappropriate topics and replies immediately',
-    pin: 'Pin',
-    unpin: 'Unpin',
-    lock: 'Lock',
-    unlock: 'Unlock',
-    pinned: 'Pinned',
-    unpinned: 'Unpinned.',
-    locked: 'Locked',
-    unlocked: 'Unlocked.',
-    threadLocked: 'This topic is locked. No new replies allowed.',
-    profileTitle: 'Profile & Settings',
-    save: 'Save',
-    saved: 'Saved.',
-    loadMore: 'Show more',
-    noReplies: 'No replies yet. Be the first to reply.',
-    threadCreated: 'Topic published.',
-    replySent: 'Reply posted.',
-    errorGeneric: 'Something went wrong. Please try again.',
-    invalidUsername: 'Username must be 3-24 characters (letters, numbers, _ and .).',
-    usernameTaken: 'This username is taken.',
-    minPassword: 'Password must be at least 6 characters.',
-    invalidCredentials: 'Incorrect email or password.',
-    emailNotConfirmed: 'Your email has not been confirmed yet.',
-    justNow: 'just now',
-    loading: 'Loading...',
-    titleTooShort: 'Title must be at least 4 characters.',
-    liveBadge: 'Live',
-    newPostsAvailable: 'new posts',
-    languageSelect: 'Application Language',
-    securityActive: 'System & Database Security Active',
-    auditLogs: 'Admin Audit Log',
-    noAuditLogs: 'No audit logs recorded yet.',
-    roleSecurityNote: 'Database Role Security: Unauthorized privilege escalation is strictly blocked.',
-    rateLimitNote: 'Spam Protection: 15s thread / 5s reply rate limiting active.'
-  },
-  de: {
-    navForum: 'Forum',
-    login: 'Anmelden',
-    logout: 'Abmelden',
-    signup: 'Registrieren',
-    email: 'E-Mail',
-    password: 'Passwort',
-    username: 'Benutzername',
-    displayName: 'Anzeigename',
-    forgot: 'Passwort vergessen?',
-    google: 'Weiter mit Google',
-    or: 'oder',
-    haveAccount: 'Schon ein Konto?',
-    noAccount: 'Noch kein Konto?',
-    loginTitle: 'Willkommen zurück',
-    loginSub: 'Melde dich an, um im Forum zu schreiben und zu liken.',
-    signupTitle: 'Werde Teil der Amed-Familie',
-    signupSub: 'Erstelle ein kostenloses Konto und diskutiere mit.',
-    resetTitle: 'Passwort zurücksetzen',
-    resetSub: 'Wir senden dir einen Link per E-Mail.',
-    sendReset: 'Link senden',
-    backToLogin: 'Zurück zur Anmeldung',
-    updateTitle: 'Neues Passwort festlegen',
-    newPassword: 'Neues Passwort',
-    savePassword: 'Passwort speichern',
-    checkEmail: 'Registriert! Bitte bestätige dein Konto über die E-Mail.',
-    resetSent: 'Ein Link zum Zurücksetzen wurde gesendet.',
-    passwordUpdated: 'Dein Passwort wurde aktualisiert.',
-    welcome: 'Willkommen',
-    loggedOut: 'Abgemeldet.',
-    navPosts: 'Beiträge',
-    timelineTitle: 'Beiträge',
-    streamAll: 'Alle (Live)',
-    streamOfficial: 'Offiziell',
-    streamFans: 'Fans',
-    streamTwitter: 'Live X (Twitter)',
-    streamProfile: 'Mein Profil',
-    myPosts: 'Meine Beiträge',
-    myPostsCount: 'Beiträge',
-    totalLikesReceived: 'Gefällt mir',
-    profileBioEmpty: 'Noch keine Biografie hinzugefügt.',
-    profileEmptyPosts: 'Du hast noch keine Beiträge geteilt.',
-    profileEmptyPostsCta: 'Teile jetzt deine Gedanken und Leidenschaft für Amedspor!',
-    loginToViewProfile: 'Bitte melde dich an, um dein Profil und deine Beiträge anzuzeigen.',
-    loginToViewProfileDesc: 'Melde dich an, um dein Profil anzuzeigen, dein Avatar anzupassen und deine Beiträge zu verwalten.',
-    editProfile: 'Profil bearbeiten',
-    viewInFeed: 'Im Feed ansehen',
-    postsTab: 'Meine Beiträge',
-    officialReadMore: 'Auf offizieller Seite lesen',
-    forYou: 'Für dich',
-    popular: 'Beliebt',
-    composerPlaceholder: 'Was gibt es Neues? Teile deine Gedanken mit einem Hashtag (#)...',
-    tweetBtn: 'Posten',
-    trendingTitle: 'Trends für dich',
-    guestBannerTitle: 'Tritt dem Amedspor Fan-Feed bei',
-    guestBannerSub: 'Teile deine Gedanken sofort, tausche dich mit Fans aus.',
-    share: 'Teilen',
-    copied: 'Beitragslink in Zwischenablage kopiert!',
-    sharePrompt: 'Link dieses Beitrags:',
-    noPosts: 'Noch keine Beiträge vorhanden. Teile den ersten!',
-    replies: 'Antworten',
-    backToTimeline: 'Zurück zu Beiträgen',
-    replyPlaceholder: 'Antworte...',
-    replyBtn: 'Antworten',
-    loginToPost: 'Zum Posten anmelden',
-    loginRequired: 'Dafür musst du angemeldet sein.',
-    title: 'Titel',
-    body: 'Inhalt',
-    category: 'Kategorie',
-    publish: 'Veröffentlichen',
-    cancel: 'Abbrechen',
-    del: 'Löschen',
-    confirmDeleteThread: 'Möchtest du dieses Thema wirklich löschen?',
-    confirmDeletePost: 'Möchtest du diese Antwort wirklich löschen?',
-    deleted: 'Gelöscht.',
-    profile: 'Profil',
-    profileSettings: 'Profil & Einstellungen',
-    settings: 'Einstellungen',
-    generalTab: 'Profil',
-    fanTab: 'Fan-Einstellungen',
-    securityTab: 'Sicherheit & Passwort',
-    adminTab: 'Admin-Bereich',
-    bio: 'Biografie / Fan-Nachricht',
-    bioPlaceholder: 'z.B. Diren Amedspor! Grün-Rote Leidenschaft...',
-    favoritePlayer: 'Lieblingsspieler',
-    selectPlayer: 'Aus dem Amedspor-Kader wählen...',
-    avatarSelect: 'Profil-Avatar auswählen',
-    uploadCustomAvatar: 'Eigenes Foto hochladen',
-    uploadHint: 'PNG, JPG, WEBP (Max. 5MB)',
-    orPresetAvatars: 'oder aus Club-Vorlagen wählen:',
-    nsfwScanning: 'KI 18+ & NSFW-Filter wird gescannt...',
-    nsfwBlockedTitle: 'Unangemessenes Bild blockiert (18+ / NSFW)',
-    nsfwBlockedDesc: 'Gemäß den Community-Richtlinien sind anstößige oder 18+-Profilbilder nicht gestattet.',
-    nsfwPassed: 'Bild genehmigt!',
-    nsfwPassedDesc: 'NSFW- und 18+-Sicherheitsfilter erfolgreich bestanden.',
-    fileTooLarge: 'Dateigröße muss kleiner als 5 MB sein.',
-    notifications: 'Benachrichtigungen',
-    notifGoals: 'Live-Tor- & Spielbenachrichtigungen',
-    notifForum: 'Forum-Antwortbenachrichtigungen',
-    currentEmail: 'Registrierte E-Mail',
-    changePassword: 'Passwort ändern',
-    newPasswordPlaceholder: 'Neues Passwort (mind. 6 Zeichen)',
-    adminBadge: 'ADMIN',
-    adminPanelTitle: 'Admin- & Moderationsbereich',
-    adminRoleDesc: 'Amedspor Live Hub Administrator',
-    adminStats: 'Forum-Statistiken',
-    adminThreadsCount: 'Themen gesamt',
-    adminPostsCount: 'Antworten gesamt',
-    adminPowers: 'Administrator-Befugnisse',
-    adminPower1: 'Jedes Thema anheften / lösen (Pin / Unpin)',
-    adminPower2: 'Jedes Thema sperren / entsperren (Lock / Unlock)',
-    adminPower3: 'Unangemessene Themen und Beiträge direkt löschen',
-    pin: 'Anheften',
-    unpin: 'Lösen',
-    lock: 'Sperren',
-    unlock: 'Entsperren',
-    pinned: 'Angeheftet',
-    unpinned: 'Nicht mehr angeheftet.',
-    locked: 'Gesperrt',
-    unlocked: 'Entsperrt.',
-    threadLocked: 'Dieses Thema ist gesperrt. Keine weiteren Antworten erlaubt.',
-    profileTitle: 'Profil & Einstellungen',
-    save: 'Speichern',
-    saved: 'Gespeichert.',
-    loadMore: 'Mehr anzeigen',
-    noReplies: 'Noch keine Antworten. Schreibe die erste.',
-    threadCreated: 'Thema veröffentlicht.',
-    replySent: 'Antwort gesendet.',
-    errorGeneric: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
-    invalidUsername: 'Benutzername: 3-24 Zeichen (Buchstaben, Zahlen, _ und .).',
-    usernameTaken: 'Dieser Benutzername ist vergeben.',
-    minPassword: 'Das Passwort muss mindestens 6 Zeichen haben.',
-    invalidCredentials: 'E-Mail oder Passwort falsch.',
-    emailNotConfirmed: 'Deine E-Mail wurde noch nicht bestätigt.',
-    justNow: 'gerade eben',
-    loading: 'Wird geladen...',
-    titleTooShort: 'Der Titel muss mindestens 4 Zeichen haben.',
-    liveBadge: 'Live',
-    newPostsAvailable: 'neue Beiträge',
-    languageSelect: 'App-Sprache',
-    securityActive: 'System- & Datenbanksicherheit Aktiv',
-    auditLogs: 'Admin-Aktivitätsprotokoll',
-    noAuditLogs: 'Noch keine Protokolle vorhanden.',
-    roleSecurityNote: 'Datenbank-Rollensicherheit: Unbefugte Rechteausweitung ist strikt gesperrt.',
-    rateLimitNote: 'Spamschutz: 15s Thema- / 5s Antwort-Ratenbegrenzung aktiv.'
-  }
-};
+// Çok dilli sözlük public/i18n.js dosyasından yüklenir
+import { CI18N } from "./i18n.js";
 
 const lang = () => {
   const l = localStorage.getItem('amed_lang') || document.documentElement.lang || 'tr';
@@ -2925,27 +2337,12 @@ function checkSpamRules(body) {
   return null;
 }
 
-function startBtnCooldown(btnId, seconds) {
-  const btn = $(btnId);
-  if (!btn) return;
-  btn.disabled = true;
-  const originalHtml = btn.innerHTML;
-  let remaining = seconds;
-  btn.innerHTML = `<span>Bekleyin (${remaining}s)</span>`;
-  const iv = setInterval(() => {
-    remaining--;
-    if (remaining <= 0) {
-      clearInterval(iv);
-      btn.disabled = false;
-      btn.innerHTML = originalHtml;
-    } else {
-      btn.innerHTML = `<span>Bekleyin (${remaining}s)</span>`;
-    }
-  }, 1000);
-}
+let isSubmittingThread = false;
+let isSubmittingReply = false;
 
 async function handleThreadForm(form) {
   if (!requireLogin()) return;
+  if (isSubmittingThread) return;
   const fd = new FormData(form);
   const title = String(fd.get('title') || '').trim();
   const body = String(fd.get('body') || '').trim();
@@ -2956,29 +2353,37 @@ async function handleThreadForm(form) {
 
   const spamErr = checkSpamRules(body);
   if (spamErr) return formMsg(form, spamErr);
-  if (S.lastThreadBody && S.lastThreadBody === body.toLowerCase() && (Date.now() - S.lastThreadTime < 10 * 60 * 1000)) {
-    return formMsg(form, 'Bu içeriği yakın zamanda zaten paylaştınız.');
+  if (S.lastThreadBody && S.lastThreadBody === body.toLowerCase().trim() && (Date.now() - S.lastThreadTime < 10 * 60 * 1000)) {
+    return formMsg(form, 'Bu içeriği yakın zamanda zaten paylaştınız. Lütfen aynı gönderiyi tekrar paylaşmayın.');
   }
 
+  isSubmittingThread = true;
   setBusy(form, true);
-  const { data, error } = await sb.from('forum_threads').insert({
-    title,
-    body,
-    category_id,
-    author_id: me()
-  }).select('id').single();
-  setBusy(form, false);
-  if (error) return formMsg(form, errMsg(error));
-  S.lastThreadBody = body.toLowerCase();
-  S.lastThreadTime = Date.now();
-  startBtnCooldown('quickPostSubmitBtn', 15);
-  closeDialog();
-  toast(T('threadCreated'));
-  openThread(data.id);
+  try {
+    const { data, error } = await sb.from('forum_threads').insert({
+      title,
+      body,
+      category_id,
+      author_id: me()
+    }).select('id').single();
+    if (error) throw error;
+
+    S.lastThreadBody = body.toLowerCase().trim();
+    S.lastThreadTime = Date.now();
+    closeDialog();
+    toast(T('threadCreated'));
+    openThread(data.id);
+  } catch (err) {
+    formMsg(form, errMsg(err));
+  } finally {
+    isSubmittingThread = false;
+    setBusy(form, false);
+  }
 }
 
 async function handleReplyForm(form) {
   if (!requireLogin()) return;
+  if (isSubmittingReply) return;
   if (S.thread?.is_locked && S.profile?.role !== 'admin') {
     return toast(T('threadLocked'), 'err');
   }
@@ -2989,28 +2394,36 @@ async function handleReplyForm(form) {
 
   const spamErr = checkSpamRules(body);
   if (spamErr) return toast(spamErr, 'err');
-  if (S.lastReplyBody && S.lastReplyBody === body.toLowerCase() && (Date.now() - S.lastReplyTime < 10 * 60 * 1000)) {
-    return toast('Bu yanıtı yakın zamanda zaten paylaştınız.', 'err');
+  if (S.lastReplyBody && S.lastReplyBody === body.toLowerCase().trim() && (Date.now() - S.lastReplyTime < 10 * 60 * 1000)) {
+    return toast('Bu yanıtı yakın zamanda zaten paylaştınız. Lütfen aynı yanıtı tekrar paylaşmayın.', 'err');
   }
 
+  isSubmittingReply = true;
   setBusy(form, true);
-  const { error } = await sb.from('forum_posts').insert({
-    thread_id: S.thread.id,
-    body,
-    author_id: me()
-  });
-  setBusy(form, false);
-  if (error) return toast(errMsg(error), 'err');
-  S.lastReplyBody = body.toLowerCase();
-  S.lastReplyTime = Date.now();
-  input.value = '';
-  toast(T('replySent'));
-  await loadThread(S.thread.id);
-  renderThreadHead();
-  renderPosts();
-  renderComposer();
-  const last = S.posts[S.posts.length - 1];
-  if (last) $(`post-${last.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  try {
+    const { error } = await sb.from('forum_posts').insert({
+      thread_id: S.thread.id,
+      body,
+      author_id: me()
+    });
+    if (error) throw error;
+
+    S.lastReplyBody = body.toLowerCase().trim();
+    S.lastReplyTime = Date.now();
+    input.value = '';
+    toast(T('replySent'));
+    await loadThread(S.thread.id);
+    renderThreadHead();
+    renderPosts();
+    renderComposer();
+    const last = S.posts[S.posts.length - 1];
+    if (last) $(`post-${last.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (err) {
+    toast(errMsg(err), 'err');
+  } finally {
+    isSubmittingReply = false;
+    setBusy(form, false);
+  }
 }
 
 async function togglePinThread(id) {
@@ -3225,6 +2638,7 @@ async function uploadComposerImage(file) {
 
 async function handleQuickPost(form) {
   if (!requireLogin()) return;
+  if (isSubmittingThread) return;
   const input = $('quickPostInput');
   const titleInput = $('quickPostTitle');
   const catSelect = $('quickPostCat');
@@ -3241,7 +2655,7 @@ async function handleQuickPost(form) {
   if (spamErr) return toast(spamErr, 'err');
 
   if (S.lastQuickPostBody && S.lastQuickPostBody === body.toLowerCase().trim() && (Date.now() - S.lastQuickPostTime < 10 * 60 * 1000)) {
-    return toast('Bu içeriği kısa süre önce zaten paylaştınız. Lütfen mükerrer/spam paylaşımdan kaçının.', 'err');
+    return toast('Bu içeriği kısa süre önce zaten paylaştınız. Lütfen aynı gönderiyi tekrar paylaşmayın.', 'err');
   }
 
   if (S.composerUploadedImage) {
@@ -3253,34 +2667,41 @@ async function handleQuickPost(form) {
     if (title.length < 4) title = 'Amedspor Taraftar Paylaşımı';
   }
 
+  isSubmittingThread = true;
   setBusy(form, true);
-  const { data, error } = await sb.from('forum_threads').insert({
-    title,
-    body,
-    category_id,
-    author_id: me()
-  }).select('id').single();
-  setBusy(form, false);
+  try {
+    const { data, error } = await sb.from('forum_threads').insert({
+      title,
+      body,
+      category_id,
+      author_id: me()
+    }).select('id').single();
 
-  if (error) return toast(errMsg(error), 'err');
-  S.lastQuickPostBody = body.toLowerCase().trim();
-  S.lastQuickPostTime = Date.now();
-  startBtnCooldown('quickPostSubmitBtn', 15);
-  if (input) input.value = '';
-  if (titleInput) titleInput.value = '';
-  S.composerUploadedImage = null;
-  const preview = $('composerMediaPreview');
-  if (preview) {
-    preview.style.display = 'none';
-    preview.innerHTML = '';
+    if (error) throw error;
+
+    S.lastQuickPostBody = body.toLowerCase().trim();
+    S.lastQuickPostTime = Date.now();
+    if (input) input.value = '';
+    if (titleInput) titleInput.value = '';
+    S.composerUploadedImage = null;
+    const preview = $('composerMediaPreview');
+    if (preview) {
+      preview.style.display = 'none';
+      preview.innerHTML = '';
+    }
+    $('composerImgBtn')?.classList.remove('has-image');
+    const fileInp = $('twComposerImgFile');
+    if (fileInp) fileInp.value = '';
+    updateQuickCharCount();
+    toast(T('threadCreated'));
+    await loadThreads();
+    renderThreadList();
+  } catch (err) {
+    toast(errMsg(err), 'err');
+  } finally {
+    isSubmittingThread = false;
+    setBusy(form, false);
   }
-  $('composerImgBtn')?.classList.remove('has-image');
-  const fileInp = $('twComposerImgFile');
-  if (fileInp) fileInp.value = '';
-  updateQuickCharCount();
-  toast(T('threadCreated'));
-  await loadThreads();
-  renderThreadList();
 }
 
 /* ---------- CANLI SENKRONİZASYON ---------- */
