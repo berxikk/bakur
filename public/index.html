@@ -27,7 +27,7 @@
   <!-- Cropper.js Görsel Kırpma Kütüphanesi -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=19" />
+  <link rel="stylesheet" href="/styles.css?v=21" />
 </head>
 <body style="background-color: #0C1014 !important; color: #f8fafc;">
   <div class="app-shell" id="appShell">
@@ -88,10 +88,51 @@
 
     <!-- Sağ Ana İçerik Bölgesi -->
     <div class="app-main-content">
-      <!-- Mobilde Menü Açma Butonu (Masaüstünde tamamen gizli, hiçbir navbar yok) -->
-      <button type="button" class="mobile-menu-fab" id="mobileMenuBtn" aria-label="Menüyü Aç" title="Menü">
-        <i class="ri-menu-2-line"></i>
-      </button>
+      <!-- Mobilde Üst Header ve Yatay Sekme Barı (Masaüstünde tamamen gizlidir) -->
+      <header class="mobile-top-bar" id="mobileTopBar">
+        <div class="mobile-top-left">
+          <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menüyü Aç" title="Menü">
+            <i class="ri-menu-2-line"></i>
+          </button>
+          <div class="mobile-brand" onclick="switchTab('overview')">
+            <img src="/icons/icon-192.png" alt="Amedspor" class="mobile-brand-logo" />
+            <span class="mobile-brand-title">Bakûr</span>
+          </div>
+        </div>
+        <div class="mobile-top-right">
+          <button type="button" class="mobile-icon-btn" id="themeToggleBtnMobile" title="Koyu / Açık Mod">
+            <i class="ri-moon-line" id="mobileThemeIcon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Mobilde Kaydırılabilir Hızlı Sekme Navigasyonu -->
+      <nav class="mobile-tab-nav" id="mobileTabNav">
+        <button class="mobile-tab-pill active" data-tab="overview">
+          <i class="ri-layout-grid-line"></i> <span>Genel Bakış</span>
+        </button>
+        <button class="mobile-tab-pill" data-tab="fixtures">
+          <i class="ri-calendar-2-line"></i> <span>Maç Takvimi</span>
+        </button>
+        <button class="mobile-tab-pill" data-tab="past-details">
+          <i class="ri-file-chart-line"></i> <span>Önceki Maçlar</span>
+        </button>
+        <button class="mobile-tab-pill" data-tab="standings">
+          <i class="ri-bar-chart-grouped-line"></i> <span>Puan Durumu</span>
+        </button>
+        <button class="mobile-tab-pill" data-tab="squad">
+          <i class="ri-team-line"></i> <span>Kadro</span>
+        </button>
+        <button class="mobile-tab-pill" data-tab="superlig">
+          <i class="ri-football-line"></i> <span>Haftanın Maçları</span>
+        </button>
+        <button class="mobile-tab-pill" data-tab="forum">
+          <i class="ri-chat-3-line"></i> <span>Gönderiler</span>
+        </button>
+        <button class="mobile-tab-pill" data-tab="profile" id="mobileProfileTab">
+          <i class="ri-user-3-line"></i> <span>Profil</span>
+        </button>
+      </nav>
 
   <main class="container">
     <!-- SEKME 1: GENEL BAKIŞ -->
@@ -558,7 +599,7 @@
   </div>
 
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-  <script src="/app.js?v=16"></script>
-  <script type="module" src="/community.js?v=11"></script>
+  <script src="/app.js?v=17"></script>
+  <script type="module" src="/community.js?v=12"></script>
 </body>
 </html>

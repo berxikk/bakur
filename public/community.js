@@ -2259,14 +2259,20 @@ function getUserCreatedHashtags() {
   const counts = new Map();
   // 1. Kullanıcıların paylaştığı tüm gönderilerden (threads) gerçek etiketleri tara
   (S.threads || []).forEach((t) => {
+    // Hem title hem body içinde aynı etiket geçebilir veya kullanıcı birden fazla kez yazmış olabilir;
+    // ancak tek bir gönderideki hashtag sadece 1 gönderi olarak sayılmalıdır.
     const text = `${t.title || ''} ${t.body || ''}`;
     const matches = text.match(/#[\p{L}\p{N}_]+/gu);
     if (matches) {
+      const uniqueTagsInThread = new Set();
       matches.forEach((tag) => {
         const norm = tag.trim();
         if (norm.length > 1) {
-          counts.set(norm, (counts.get(norm) || 0) + 1);
+          uniqueTagsInThread.add(norm);
         }
+      });
+      uniqueTagsInThread.forEach((tag) => {
+        counts.set(tag, (counts.get(tag) || 0) + 1);
       });
     }
   });
@@ -2276,11 +2282,15 @@ function getUserCreatedHashtags() {
     const text = p.body || '';
     const matches = text.match(/#[\p{L}\p{N}_]+/gu);
     if (matches) {
+      const uniqueTagsInPost = new Set();
       matches.forEach((tag) => {
         const norm = tag.trim();
         if (norm.length > 1) {
-          counts.set(norm, (counts.get(norm) || 0) + 1);
+          uniqueTagsInPost.add(norm);
         }
+      });
+      uniqueTagsInPost.forEach((tag) => {
+        counts.set(tag, (counts.get(tag) || 0) + 1);
       });
     }
   });

@@ -894,6 +894,13 @@ function switchTab(tabId, updateUrl = true) {
   document.querySelectorAll('#mainNav .nav-tab').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.tab === tabId);
   });
+  document.querySelectorAll('#mobileTabNav .mobile-tab-pill').forEach((btn) => {
+    const isActive = btn.dataset.tab === tabId;
+    btn.classList.toggle('active', isActive);
+    if (isActive) {
+      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  });
   document.querySelectorAll('.tab-panel').forEach((panel) => {
     panel.classList.toggle('active', panel.id === `tab-${tabId}`);
   });
@@ -934,10 +941,12 @@ function setTheme(theme) {
   const isDark = theme === 'dark';
   const iconTop = document.getElementById('themeIcon');
   const iconSidebar = document.getElementById('sidebarThemeIcon');
+  const iconMobile = document.getElementById('mobileThemeIcon');
   const labelSidebar = document.getElementById('sidebarThemeLabel');
 
   if (iconTop) iconTop.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
   if (iconSidebar) iconSidebar.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
+  if (iconMobile) iconMobile.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
   if (labelSidebar) labelSidebar.textContent = isDark ? 'Açık Mod' : 'Koyu Mod';
 }
 
@@ -2988,10 +2997,11 @@ function initApp() {
   sidebarCloseBtn?.addEventListener('click', closeSidebar);
   sidebarBackdrop?.addEventListener('click', closeSidebar);
 
-  // Tema Değiştirme Butonları (Hem üst bar hem de yan panel)
+  // Tema Değiştirme Butonları (Üst bar, yan panel ve mobil başlık)
   initTheme();
   document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
   document.getElementById('themeToggleBtnSidebar')?.addEventListener('click', toggleTheme);
+  document.getElementById('themeToggleBtnMobile')?.addEventListener('click', toggleTheme);
 
   // Dil Seçici (TR / KU / EN / DE) — olay delegasyonu ile
   document.getElementById('langSwitcher')?.addEventListener('click', (e) => {
@@ -2999,8 +3009,8 @@ function initApp() {
     if (btn?.dataset.lang) setLanguage(btn.dataset.lang);
   });
 
-  // Ana Sekmeler
-  document.querySelectorAll('#mainNav .nav-tab').forEach((btn) => {
+  // Ana Sekmeler (Hem dikey sol menü hem yatay mobil sekme şeridi)
+  document.querySelectorAll('#mainNav .nav-tab, #mobileTabNav .mobile-tab-pill').forEach((btn) => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
