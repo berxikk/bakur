@@ -2845,8 +2845,9 @@ function renderModalBody() {
 
   // SEKME 4: DAKİKA DAKİKA FİLTRELENEBİLİR CANLI ANLATIM
   else if (activeModalTab === 'commentary') {
-    const isStarted = activeModalData?.status?.type === 'finished' || activeModalData?.status?.type === 'inprogress' || activeModalData?.status?.state === 'in' || activeModalData?.status?.state === 'post';
-    const rawComm = isStarted ? (activeModalData.commentary || []) : [];
+    const evStatus = ev.status?.type || activeModalData?.event?.status?.type || activeModalData?.status?.type || '';
+    const rawComm = activeModalData?.commentary || [];
+    const isStarted = evStatus === 'finished' || evStatus === 'inprogress' || ev.status?.state === 'in' || ev.status?.state === 'post' || rawComm.length > 0;
     if (!isStarted || rawComm.length === 0) {
       container.innerHTML = `
         <div class="card" style="margin-bottom: 1.15rem; padding: 2.2rem 1.5rem; text-align: center;">

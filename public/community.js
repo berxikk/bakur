@@ -1054,7 +1054,9 @@ async function handleAuthForm(form) {
   const fd = new FormData(form);
   const email = String(fd.get('email') || '').trim();
   const password = String(fd.get('password') || '');
-  const redirectTo = window.location.origin;
+  const redirectTo = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+    ? window.location.origin
+    : 'https://bakur.onread.com';
 
   if ((kind === 'signup' || kind === 'update') && password.length < 6) return formMsg(form, T('minPassword'));
 
@@ -1133,9 +1135,12 @@ async function handleAuthForm(form) {
 }
 
 async function signInWithGoogle() {
+  const origin = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+    ? window.location.origin
+    : 'https://bakur.onread.com';
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin }
+    options: { redirectTo: origin }
   });
   if (error) toast(errMsg(error), 'err');
 }
@@ -3081,7 +3086,11 @@ function insertTag(tag) {
 }
 
 async function shareThread(id) {
-  const url = `${window.location.origin}${window.location.pathname}#forum/${id}`;
+  const base = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+    ? `${window.location.origin}${window.location.pathname}`
+    : 'https://bakur.onread.com/';
+  const cleanBase = base.endsWith('/') ? base : `${base}/`;
+  const url = `${cleanBase}#forum/${id}`;
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(url);

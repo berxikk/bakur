@@ -1624,7 +1624,8 @@ const server = http.createServer(async (req, res) => {
     return res.end();
   }
 
-  const parsedUrl = new URL(req.url, `http://localhost:${PORT}`);
+  const reqHost = req.headers.host || 'bakur.onread.com';
+  const parsedUrl = new URL(req.url, `http://${reqHost}`);
   const pathname = parsedUrl.pathname;
   const clientIp = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
 
