@@ -78,10 +78,10 @@
           <i class="ri-football-line"></i> <span data-i18n="navMatchweek">Haftanın Maçları</span>
         </button>
         <button class="nav-tab" data-tab="forum">
-          <i class="ri-chat-3-line"></i> <span data-ci18n="navPosts">Gönderiler</span>
+          <i class="ri-chat-3-line"></i> <span data-i18n="navPosts">Gönderiler</span>
         </button>
         <button class="nav-tab" data-tab="profile" id="navProfileTab">
-          <i class="ri-user-3-line"></i> <span data-ci18n="profile">Profil</span>
+          <i class="ri-user-3-line"></i> <span data-i18n="profile">Profil</span>
         </button>
       </nav>
 
@@ -90,7 +90,7 @@
         <div id="authArea" class="auth-area sidebar-auth-area"></div>
         <button type="button" class="sidebar-theme-toggle" id="themeToggleBtnSidebar" title="Koyu / Açık Mod">
           <i class="ri-moon-line" id="sidebarThemeIcon"></i>
-          <span id="sidebarThemeLabel">Koyu Mod</span>
+          <span id="sidebarThemeLabel" data-i18n="darkTheme">Koyu Mod</span>
         </button>
       </div>
     </aside>
@@ -121,28 +121,28 @@
       <!-- Mobilde Kaydırılabilir Hızlı Sekme Navigasyonu -->
       <nav class="mobile-tab-nav" id="mobileTabNav">
         <button class="mobile-tab-pill active" data-tab="overview">
-          <i class="ri-layout-grid-line"></i> <span>Genel Bakış</span>
+          <i class="ri-layout-grid-line"></i> <span data-i18n="navOverview">Genel Bakış</span>
         </button>
         <button class="mobile-tab-pill" data-tab="fixtures">
-          <i class="ri-calendar-2-line"></i> <span>Maç Takvimi</span>
+          <i class="ri-calendar-2-line"></i> <span data-i18n="navCalendar">Maç Takvimi</span>
         </button>
         <button class="mobile-tab-pill" data-tab="past-details">
-          <i class="ri-file-chart-line"></i> <span>Önceki Maçlar</span>
+          <i class="ri-file-chart-line"></i> <span data-i18n="navPastDetails">Önceki Maçlar</span>
         </button>
         <button class="mobile-tab-pill" data-tab="standings">
-          <i class="ri-bar-chart-grouped-line"></i> <span>Puan Durumu</span>
+          <i class="ri-bar-chart-grouped-line"></i> <span data-i18n="navStandings">Puan Durumu</span>
         </button>
         <button class="mobile-tab-pill" data-tab="squad">
-          <i class="ri-team-line"></i> <span>Kadro</span>
+          <i class="ri-team-line"></i> <span data-i18n="navSquad">Kadro</span>
         </button>
         <button class="mobile-tab-pill" data-tab="superlig">
-          <i class="ri-football-line"></i> <span>Haftanın Maçları</span>
+          <i class="ri-football-line"></i> <span data-i18n="navMatchweek">Haftanın Maçları</span>
         </button>
         <button class="mobile-tab-pill" data-tab="forum">
-          <i class="ri-chat-3-line"></i> <span>Gönderiler</span>
+          <i class="ri-chat-3-line"></i> <span data-i18n="navPosts">Gönderiler</span>
         </button>
         <button class="mobile-tab-pill" data-tab="profile" id="mobileProfileTab">
-          <i class="ri-user-3-line"></i> <span>Profil</span>
+          <i class="ri-user-3-line"></i> <span data-i18n="profile">Profil</span>
         </button>
       </nav>
 
@@ -275,11 +275,11 @@
           </div>
 
           <div class="calendar-nav-controls">
-            <button class="card-action" id="calPrevMonthBtn" title="Önceki Ay">
+            <button class="card-action" id="calPrevMonthBtn" data-i18n-title="calPrevMonth" title="Önceki Ay">
               <i class="ri-arrow-left-s-line"></i>
             </button>
             <div class="calendar-current-month" id="calMonthTitle">Ekim 2026</div>
-            <button class="card-action" id="calNextMonthBtn" title="Sonraki Ay">
+            <button class="card-action" id="calNextMonthBtn" data-i18n-title="calNextMonth" title="Sonraki Ay">
               <i class="ri-arrow-right-s-line"></i>
             </button>
             <button class="card-action" id="calTodayBtn">
@@ -320,7 +320,7 @@
           <div class="cal-mobile-matches-section" id="calMobileMatchesSection">
             <div class="cal-mobile-matches-header">
               <i class="ri-football-line" style="color:var(--amed-green);"></i>
-              <span id="calMobileMatchesTitle">Bu Ayki Karşılaşmalar</span>
+              <span id="calMobileMatchesTitle" data-i18n="thisMonthMatches">Bu Ayki Karşılaşmalar</span>
             </div>
             <div class="cal-mobile-matches-list" id="calMobileMatchesList"></div>
           </div>
@@ -501,17 +501,17 @@
         <aside class="tw-sidebar">
           <div class="tw-search-card card">
             <i class="ri-search-line"></i>
-            <input type="search" id="forumSearch" placeholder="Gönderilerde ve etiketlerde ara..." />
+            <input type="search" id="forumSearch" data-i18n-ph="searchPostsPlaceholder" placeholder="Gönderilerde ve etiketlerde ara..." />
           </div>
 
           <!-- Gündemdekiler (Trends) -->
           <div class="tw-sidebar-card card">
             <div class="tw-sidebar-header">
-              <span class="tw-sidebar-title"><i class="ri-fire-fill" style="color:var(--amed-red);"></i> Gündemdekiler</span>
+              <span class="tw-sidebar-title"><i class="ri-fire-fill" style="color:var(--amed-red);"></i> <span data-i18n="trendingTitle">Gündemdekiler</span></span>
             </div>
             <div class="tw-trends-list" id="twSidebarTrendsList">
               <div class="tw-trend-empty" style="padding:1rem; color:var(--text-muted); font-size:0.85rem; text-align:center;">
-                <i class="ri-hashtag"></i> Henüz kullanıcı etiketi yok.
+                <i class="ri-hashtag"></i> <span data-i18n="noTagsYet">Henüz kullanıcı etiketi yok.</span>
               </div>
             </div>
           </div>
@@ -519,7 +519,7 @@
           <!-- Kimi Takip Etmeli -->
           <div class="tw-sidebar-card card">
             <div class="tw-sidebar-header">
-              <span class="tw-sidebar-title"><i class="ri-user-star-line"></i> Kimi Takip Etmeli</span>
+              <span class="tw-sidebar-title"><i class="ri-user-star-line"></i> <span data-i18n="whoToFollow">Kimi Takip Etmeli</span></span>
             </div>
             <div class="tw-follow-list" id="twSidebarFollowList">
               <div class="tw-follow-item">
@@ -528,7 +528,7 @@
                   <div class="tw-follow-name">Amedspor <i class="ri-verified-badge-fill verified-badge"></i></div>
                   <div class="tw-follow-handle">@amedskofficial</div>
                 </div>
-                <a href="https://x.com/amedskofficial" target="_blank" rel="noopener noreferrer" class="tw-follow-btn">Takip Et</a>
+                <a href="https://x.com/amedskofficial" target="_blank" rel="noopener noreferrer" class="tw-follow-btn" data-i18n="follow">Takip Et</a>
               </div>
             </div>
           </div>
@@ -589,7 +589,7 @@
   <div class="c-backdrop" id="cropModal" style="display:none; z-index:9999;">
     <div class="crop-modal-box">
       <div class="crop-modal-header">
-        <div class="crop-modal-title"><i class="ri-crop-2-line"></i> <span id="cropModalTitle">Görseli Kırp ve Ayarla</span></div>
+        <div class="crop-modal-title"><i class="ri-crop-2-line"></i> <span id="cropModalTitle" data-i18n="cropAndSet">Görseli Kırp ve Ayarla</span></div>
         <button type="button" class="btn-close" id="btnCancelCrop" title="İptal"><i class="ri-close-line"></i></button>
       </div>
       <div class="crop-modal-body">
@@ -597,15 +597,15 @@
           <img id="cropImageTarget" src="" alt="Kırpılacak Görsel" />
         </div>
         <div class="crop-toolbar">
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomIn" title="Yakınlaştır"><i class="ri-zoom-in-line"></i> Yakınlaştır</button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomOut" title="Uzaklaştır"><i class="ri-zoom-out-line"></i> Uzaklaştır</button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnRotate" title="Döndür"><i class="ri-refresh-line"></i> Döndür</button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnReset" title="Sıfırla"><i class="ri-aspect-ratio-line"></i> Sıfırla</button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomIn" title="Yakınlaştır"><i class="ri-zoom-in-line"></i> <span data-i18n="zoomIn">Yakınlaştır</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomOut" title="Uzaklaştır"><i class="ri-zoom-out-line"></i> <span data-i18n="zoomOut">Uzaklaştır</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnRotate" title="Döndür"><i class="ri-refresh-line"></i> <span data-i18n="rotate">Döndür</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnReset" title="Sıfırla"><i class="ri-aspect-ratio-line"></i> <span data-i18n="resetBtn">Sıfırla</span></button>
         </div>
       </div>
       <div class="crop-modal-footer">
-        <button type="button" class="c-btn c-btn-ghost" id="btnCropDismiss">Vazgeç</button>
-        <button type="button" class="c-btn c-btn-primary" id="btnCropConfirm"><i class="ri-check-line"></i> Kırp ve Onayla</button>
+        <button type="button" class="c-btn c-btn-ghost" id="btnCropDismiss" data-i18n="cancel">Vazgeç</button>
+        <button type="button" class="c-btn c-btn-primary" id="btnCropConfirm"><i class="ri-check-line"></i> <span data-i18n="cropConfirm">Kırp ve Onayla</span></button>
       </div>
     </div>
   </div> <!-- /#cropModal -->
@@ -616,13 +616,13 @@
       <div class="follows-modal-header">
         <div class="follows-tabs-nav">
           <button type="button" class="follows-tab-btn active" id="followsTabFollowers" data-action="switch-follows-tab" data-tab="followers">
-            <i class="ri-group-line"></i> Takipçiler <span class="follows-tab-count" id="followsTabFollowersCount">(0)</span>
+            <i class="ri-group-line"></i> <span data-i18n="followers">Takipçiler</span> <span class="follows-tab-count" id="followsTabFollowersCount">(0)</span>
           </button>
           <button type="button" class="follows-tab-btn" id="followsTabFollowing" data-action="switch-follows-tab" data-tab="following">
-            <i class="ri-user-follow-line"></i> Takip Edilenler <span class="follows-tab-count" id="followsTabFollowingCount">(0)</span>
+            <i class="ri-user-follow-line"></i> <span data-i18n="following">Takip Edilenler</span> <span class="follows-tab-count" id="followsTabFollowingCount">(0)</span>
           </button>
         </div>
-        <button type="button" class="btn-close" id="closeFollowsModalBtn" data-action="close-follows-modal" title="Kapat">
+        <button type="button" class="btn-close" id="closeFollowsModalBtn" data-action="close-follows-modal" data-i18n-title="close" title="Kapat">
           <i class="ri-close-line"></i>
         </button>
       </div>
@@ -633,8 +633,8 @@
   </div> <!-- /#followsModal -->
 
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-  <script src="/i18n.js?v=2"></script>
-  <script src="/app.js?v=24"></script>
-  <script type="module" src="/community.js?v=24"></script>
+  <script src="/i18n.js?v=4"></script>
+  <script src="/app.js?v=26"></script>
+  <script type="module" src="/community.js?v=26"></script>
 </body>
 </html>

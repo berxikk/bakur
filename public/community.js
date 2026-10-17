@@ -201,6 +201,9 @@ function applyStaticLabels() {
   document.querySelectorAll('[data-ci18n-ph]').forEach((el) => {
     el.placeholder = T(el.dataset.ci18nPh);
   });
+  document.querySelectorAll('[data-ci18n-title]').forEach((el) => {
+    el.title = T(el.dataset.ci18nTitle);
+  });
 }
 
 /* ---------- ÜST BAR: GİRİŞ ALANI ---------- */
@@ -572,7 +575,7 @@ async function getFollowCounts(userId) {
 async function toggleFollow(targetUserId) {
   if (!me()) {
     openAuth('login');
-    toast('Takip edebilmek için lütfen giriş yapın.');
+    toast(T('loginToFollow'));
     return;
   }
   if (!targetUserId || targetUserId === me()) return;
@@ -594,13 +597,13 @@ async function toggleFollow(targetUserId) {
         .eq('follower_id', me())
         .eq('following_id', targetUserId);
       if (error) throw error;
-      toast('Takipten çıkarıldı.');
+      toast(T('unfollowedToast'));
     } else {
       const { error } = await sb
         .from('user_follows')
         .insert({ follower_id: me(), following_id: targetUserId });
       if (error) throw error;
-      toast('Takip edildi!');
+      toast(T('followedToast'));
     }
   } catch (err) {
     if (isFollowing) {
@@ -610,7 +613,7 @@ async function toggleFollow(targetUserId) {
     }
     updateFollowButtons(targetUserId, isFollowing);
     console.error('toggleFollow error:', err);
-    toast(err.message || 'İşlem gerçekleştirilemedi.');
+    toast(err.message || T('errorGeneric'));
   }
 
   const followersCountEl = $('pucFollowersCount');
@@ -634,7 +637,7 @@ let followsModalActiveTab = 'followers';
 async function openFollowsModal(userId, initialTab = 'followers') {
   const targetId = userId || S.viewingUserId || me();
   if (!targetId) {
-    toast('Takipçi listesini görüntülemek için lütfen giriş yapın.', 'info');
+    toast(T('loginToViewFollows'), 'info');
     openAuth('login');
     return;
   }
@@ -676,7 +679,7 @@ async function switchFollowsTab(tab) {
   listEl.innerHTML = `
     <div style="text-align:center; padding:2.5rem 1rem; color:var(--text-secondary);">
       <i class="ri-loader-4-line spin" style="font-size:2rem; color:var(--amed-green);"></i>
-      <div style="margin-top:0.6rem; font-size:0.88rem; font-weight:600;">Kullanıcılar yükleniyor...</div>
+      <div style="margin-top:0.6rem; font-size:0.88rem; font-weight:600;">${T('loadingUsers')}</div>
     </div>
   `;
 
@@ -702,10 +705,10 @@ async function switchFollowsTab(tab) {
         <div class="follows-empty">
           <i class="${isFollowers ? 'ri-group-line' : 'ri-user-follow-line'}" style="font-size:2.6rem; color:var(--text-muted); opacity:0.6;"></i>
           <div style="font-weight:700; margin-top:0.65rem; color:var(--text-main); font-size:0.95rem;">
-            ${isFollowers ? 'Henüz hiçbir takipçisi yok.' : 'Henüz kimseyi takip etmiyor.'}
+            ${isFollowers ? T('noFollowersYet') : T('noFollowingYet')}
           </div>
           <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">
-            ${isFollowers ? 'Amedspor ailesine katıldıkça takipçiler burada listelenecektir.' : 'Forumdaki diğer taraftarları takip ederek akışı zenginleştirebilirsiniz.'}
+            ${isFollowers ? T('noFollowersSub') : T('noFollowingSub')}
           </div>
         </div>
       `;
@@ -718,13 +721,13 @@ async function switchFollowsTab(tab) {
       const isAdmin = u.role === 'admin';
       return `
         <div class="follows-item">
-          <div class="follows-item-left" data-action="click-follow-user" data-user-id="${u.id}" style="cursor:pointer;" title="Profili Gör">
+          <div class="follows-item-left" data-action="click-follow-user" data-user-id="${u.id}" style="cursor:pointer;" title="${T('viewProfileTooltip')}">
             <div class="follows-avatar">
               ${avatarHTML(u, 44)}
             </div>
             <div class="follows-info">
               <div class="follows-name-row">
-                <span class="follows-display-name">${esc(u.display_name || u.username || 'Amedsporlu')}</span>
+                <span class="follows-display-name">${esc(u.display_name || u.username || 'Amedspor')}</span>
                 ${isAdmin ? '<span class="admin-badge"><i class="ri-shield-star-fill"></i> ADMIN</span>' : ''}
               </div>
               <div class="follows-username">@${esc(u.username || 'taraftar')}</div>
@@ -734,7 +737,7 @@ async function switchFollowsTab(tab) {
           <div class="follows-item-right">
             ${!isMe && me() ? `
               <button type="button" class="tw-sidebar-follow-btn ${isFollowing ? 'following' : ''}" data-action="toggle-follow" data-user-id="${u.id}">
-                <span>${isFollowing ? 'Takip Ediliyor' : 'Takip Et'}</span>
+                <span>${isFollowing ? T('followingBtn') : T('followBtn')}</span>
               </button>
             ` : ''}
           </div>
@@ -746,7 +749,7 @@ async function switchFollowsTab(tab) {
     listEl.innerHTML = `
       <div class="follows-empty" style="color:var(--amed-red);">
         <i class="ri-error-warning-line" style="font-size:2rem;"></i>
-        <div style="margin-top:0.5rem; font-weight:600;">Liste yüklenirken bir sorun oluştu.</div>
+        <div style="margin-top:0.5rem; font-weight:600;">${T('loadListError')}</div>
       </div>
     `;
   }
@@ -760,18 +763,18 @@ function updateFollowButtons(targetUserId, isFollowing) {
       const icon = btn.querySelector('i');
       const text = btn.querySelector('span');
       if (icon) icon.className = isFollowing ? 'ri-user-check-line' : 'ri-user-add-line';
-      if (text) text.textContent = isFollowing ? 'Takip Ediliyor' : 'Takip Et';
-      btn.title = isFollowing ? 'Takibi Bırak' : 'Takip Et';
+      if (text) text.textContent = isFollowing ? T('followingBtn') : T('followBtn');
+      btn.title = isFollowing ? T('unfollowBtn') : T('followBtn');
     } else if (btn.classList.contains('tw-sidebar-follow-btn')) {
       const text = btn.querySelector('span');
-      if (text) text.textContent = isFollowing ? 'Takip Ediliyor' : 'Takip Et';
+      if (text) text.textContent = isFollowing ? T('followingBtn') : T('followBtn');
     } else {
       btn.classList.toggle('c-btn-ghost', isFollowing);
       btn.classList.toggle('c-btn-primary', !isFollowing);
       const icon = btn.querySelector('i');
       const text = btn.querySelector('span');
       if (icon) icon.className = isFollowing ? 'ri-user-unfollow-line' : 'ri-user-follow-line';
-      if (text) text.textContent = isFollowing ? 'Takibi Bırak' : 'Takip Et';
+      if (text) text.textContent = isFollowing ? T('unfollowBtn') : T('followBtn');
     }
   });
 }
@@ -793,18 +796,18 @@ async function loadSuggestedUsers() {
       const isFollowing = S.followingSet.has(u.id);
       return `
         <div class="tw-follow-item">
-          <div class="tw-follow-avatar-wrap" data-action="view-user-profile" data-user-id="${u.id}" style="cursor:pointer;" title="Profili Gör">
+          <div class="tw-follow-avatar-wrap" data-action="view-user-profile" data-user-id="${u.id}" style="cursor:pointer;" title="${T('viewProfileTooltip')}">
             ${avatarHTML(u, 40)}
           </div>
-          <div class="tw-follow-info" data-action="view-user-profile" data-user-id="${u.id}" style="cursor:pointer;" title="Profili Gör">
+          <div class="tw-follow-info" data-action="view-user-profile" data-user-id="${u.id}" style="cursor:pointer;" title="${T('viewProfileTooltip')}">
             <div class="tw-follow-name">
               <span>${esc(u.display_name || u.username)}</span>
-              ${u.role === 'admin' ? '<i class="ri-verified-badge-fill verified-badge" title="Yönetici"></i>' : ''}
+              ${u.role === 'admin' ? `<i class="ri-verified-badge-fill verified-badge" title="${T('adminBadgeTitle')}"></i>` : ''}
             </div>
             <div class="tw-follow-handle">@${esc(u.username || 'taraftar')}</div>
           </div>
           <button type="button" class="tw-sidebar-follow-btn ${isFollowing ? 'following' : ''}" data-action="toggle-follow" data-user-id="${u.id}">
-            <span>${isFollowing ? 'Takip Ediliyor' : 'Takip Et'}</span>
+            <span>${isFollowing ? T('followingBtn') : T('followBtn')}</span>
           </button>
         </div>
       `;
@@ -868,7 +871,7 @@ async function renderProfilePage(targetUserId) {
       container.innerHTML = `
         <div class="profile-loading card" style="padding:3rem; text-align:center; color:var(--text-muted);">
           <i class="ri-loader-4-line spin" style="font-size:2rem; color:var(--amed-green);"></i>
-          <p style="margin-top:0.75rem;">Kullanıcı profili yükleniyor...</p>
+          <p style="margin-top:0.75rem;">${T('loadingProfile')}</p>
         </div>
       `;
       try {
@@ -877,9 +880,9 @@ async function renderProfilePage(targetUserId) {
           container.innerHTML = `
             <div class="card" style="padding:2.5rem; text-align:center;">
               <i class="ri-user-unfollow-line" style="font-size:2.5rem; color:var(--amed-red);"></i>
-              <h3 style="margin-top:0.5rem;">Kullanıcı bulunamadı</h3>
-              <p style="color:var(--text-muted);">Bu profil silinmiş veya mevcut değil.</p>
-              <button class="c-btn c-btn-primary" data-action="goto-forum" style="margin-top:1rem;">Akışa Dön</button>
+              <h3 style="margin-top:0.5rem;">${T('userNotFound')}</h3>
+              <p style="color:var(--text-muted);">${T('userNotFoundDesc')}</p>
+              <button class="c-btn c-btn-primary" data-action="goto-forum" style="margin-top:1rem;">${T('backToFeed')}</button>
             </div>
           `;
           return;
@@ -907,7 +910,7 @@ async function renderProfilePage(targetUserId) {
       ${!isSelf ? `
         <div class="profile-back-bar">
           <button type="button" class="c-btn c-btn-ghost c-btn-sm" data-action="goto-my-profile">
-            <i class="ri-arrow-left-line"></i> <span>Profilime Dön</span>
+            <i class="ri-arrow-left-line"></i> <span>${T('backToProfile')}</span>
           </button>
         </div>
       ` : ''}
@@ -930,7 +933,7 @@ async function renderProfilePage(targetUserId) {
               ` : `
                 <button type="button" class="c-btn ${isFollowing ? 'c-btn-ghost' : 'c-btn-primary'} c-btn-sm btn-follow" data-action="toggle-follow" data-user-id="${targetId}">
                   <i class="${isFollowing ? 'ri-user-unfollow-line' : 'ri-user-follow-line'}"></i>
-                  <span>${isFollowing ? 'Takibi Bırak' : 'Takip Et'}</span>
+                  <span>${isFollowing ? T('unfollowBtn') : T('followBtn')}</span>
                 </button>
               `}
             </div>
@@ -940,13 +943,13 @@ async function renderProfilePage(targetUserId) {
           <div class="puc-identity">
             <div class="puc-name-row">
               <h1 class="puc-name">${esc(p.display_name || p.username)}</h1>
-              ${isAdmin ? `<span class="admin-badge"><i class="ri-shield-star-fill"></i> ADMIN</span>` : `<span class="fan-badge"><i class="ri-heart-3-fill"></i> TARAFTAR</span>`}
+              ${isAdmin ? `<span class="admin-badge"><i class="ri-shield-star-fill"></i> ADMIN</span>` : `<span class="fan-badge"><i class="ri-heart-3-fill"></i> ${T('fanBadge')}</span>`}
             </div>
             <div class="puc-handle">@${esc(p.username || '')}</div>
 
             ${p.favorite_player ? `
               <div class="puc-player-row">
-                <span class="puc-player-pill" title="Desteklediği Futbolcu">
+                <span class="puc-player-pill" title="${T('favoritePlayer')}">
                   <i class="ri-t-shirt-2-fill"></i> ${esc(p.favorite_player)}
                 </span>
               </div>
@@ -959,19 +962,19 @@ async function renderProfilePage(targetUserId) {
           <div class="puc-stats-grid">
             <div class="puc-stat-cell">
               <span class="puc-stat-num">${userPosts.length}</span>
-              <span class="puc-stat-lbl">Gönderi</span>
+              <span class="puc-stat-lbl">${T('postsWord')}</span>
             </div>
-            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${targetId}" data-initial-tab="followers" title="Takipçileri Gör">
+            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${targetId}" data-initial-tab="followers" title="${T('followersTab')}">
               <span class="puc-stat-num" id="pucFollowersCount">${followersCount}</span>
-              <span class="puc-stat-lbl">Takipçi</span>
+              <span class="puc-stat-lbl">${T('followers')}</span>
             </div>
-            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${targetId}" data-initial-tab="following" title="Takip Edilenleri Gör">
+            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${targetId}" data-initial-tab="following" title="${T('followingTab')}">
               <span class="puc-stat-num" id="pucFollowingCount">${followingCount}</span>
-              <span class="puc-stat-lbl">Takip Edilen</span>
+              <span class="puc-stat-lbl">${T('following')}</span>
             </div>
             <div class="puc-stat-cell">
               <span class="puc-stat-num">${totalLikes}</span>
-              <span class="puc-stat-lbl">Beğeni</span>
+              <span class="puc-stat-lbl">${T('likes')}</span>
             </div>
           </div>
         </div>
@@ -984,14 +987,14 @@ async function renderProfilePage(targetUserId) {
           <div class="puc-posts-header">
             <div class="puc-tab-item active">
               <i class="ri-chat-1-line"></i>
-              <span>${isSelf ? T('myPosts') : 'Gönderiler'} (${userPosts.length})</span>
+              <span>${isSelf ? T('myPosts') : T('navPosts')} (${userPosts.length})</span>
             </div>
           </div>
           <div class="puc-posts-stream">
             ${userPosts.length ? userPosts.map((t) => renderUserTweet(t)).join('') : `
               <div class="puc-empty-box">
                 <i class="ri-chat-new-line" style="font-size:2.5rem; color:var(--amed-green);"></i>
-                <div style="font-weight:700; font-size:1.05rem; margin-top:0.4rem;">${isSelf ? T('profileEmptyPosts') : 'Henüz hiçbir gönderi paylaşılmadı.'}</div>
+                <div style="font-weight:700; font-size:1.05rem; margin-top:0.4rem;">${isSelf ? T('profileEmptyPosts') : T('noPostsYetUser')}</div>
                 <div style="color:var(--text-secondary); font-size:0.88rem; margin-top:0.2rem;">${isSelf ? T('profileEmptyPostsCta') : ''}</div>
                 ${isSelf ? `
                   <button class="c-btn c-btn-primary" style="margin-top:0.8rem;" data-action="goto-forum">
@@ -1040,7 +1043,7 @@ function renderSettingsPage() {
       <div class="settings-page-header card">
         <div class="sph-left">
           <h1 class="settings-page-title"><i class="ri-settings-3-line"></i> ${T('settings')}</h1>
-          <p class="settings-page-sub">Profil resmi, hesap bilgileri, dil ve güvenlik tercihlerinizi buradan yönetebilirsiniz.</p>
+          <p class="settings-page-sub">${T('settingsPageSub')}</p>
         </div>
         <div class="sph-right">
           <button type="button" class="c-btn c-btn-ghost c-btn-sm" data-action="goto-profile">
@@ -1056,7 +1059,7 @@ function renderSettingsPage() {
           <!-- KART 1: Profil Fotoğrafı ve Bilgiler -->
           <div class="settings-section-card">
             <div class="section-card-header">
-              <div class="section-card-title"><i class="ri-user-smile-line"></i> ${T('generalTab')} Bilgileri</div>
+              <div class="section-card-title"><i class="ri-user-smile-line"></i> ${T('generalTab')}</div>
             </div>
 
             <form class="c-form" id="formProfileMain" novalidate>
@@ -1075,7 +1078,7 @@ function renderSettingsPage() {
                     </button>
                     ${p.avatar_url ? `
                       <button type="button" class="c-btn c-btn-ghost danger-btn" id="removePageAvatarBtn">
-                        <i class="ri-delete-bin-line"></i> Fotoğrafı Kaldır
+                        <i class="ri-delete-bin-line"></i> ${T('removePhoto')}
                       </button>
                     ` : ''}
                   </div>
@@ -1221,7 +1224,7 @@ function showCropDialog(dataUri, type = 'avatar') {
     }
 
     if (titleEl) {
-      titleEl.textContent = type === 'avatar' ? 'Profil Resmini Kırp ve Ayarla' : 'Kapak Fotoğrafını Kırp ve Ayarla';
+      titleEl.textContent = T('cropTitle');
     }
 
     if (currentCropper) {
@@ -1232,7 +1235,7 @@ function showCropDialog(dataUri, type = 'avatar') {
     // Modal içindeki görsel alanını temizle ve sıfırdan oluştur
     const cropContainer = modal.querySelector('.crop-container');
     if (cropContainer) {
-      cropContainer.innerHTML = '<img id="cropImageTarget" src="" alt="Kırpılacak Görsel" style="display:block; max-width:100%; max-height:100%;" />';
+      cropContainer.innerHTML = `<img id="cropImageTarget" src="" alt="${T('cropTitle')}" style="display:block; max-width:100%; max-height:100%;" />`;
     }
     const freshImg = $('cropImageTarget');
 
@@ -1417,7 +1420,7 @@ function initPageAvatarUploader() {
       const dummyP = { ...(S.profile || {}), avatar_url: null };
       if (preview) preview.innerHTML = avatarHTML(dummyP, 64);
       removeBtn.style.display = 'none';
-      toast('Fotoğraf kaldırıldı. Kaydet butonuna basarak onaylayın.');
+      toast(T('photoRemovedToast'));
     });
   }
 
@@ -1434,7 +1437,7 @@ function initPageAvatarUploader() {
       const origHtml = pickBtn.innerHTML;
       try {
         pickBtn.disabled = true;
-        pickBtn.innerHTML = '<i class="ri-loader-4-line spin"></i> <span>Yükleniyor...</span>';
+        pickBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> <span>${T('loading')}</span>`;
 
         const url = await uploadImageToHosting(file, 'avatar');
         if (url) {
@@ -1443,11 +1446,11 @@ function initPageAvatarUploader() {
             preview.innerHTML = `<img class="c-avatar" style="width:64px;height:64px;border:2px solid var(--amed-green);object-fit:cover;" src="${esc(url)}?t=${Date.now()}" alt="Avatar" />`;
           }
           if (removeBtn) removeBtn.style.display = 'inline-flex';
-          toast('Profil fotoğrafı seçildi. Kaydet butonuna basarak onaylayın.');
+          toast(T('photoSelectedToast'));
         }
       } catch (err) {
         if (err.message !== 'Kırpma işlemi iptal edildi.') {
-          toast('Fotoğraf yüklenemedi.', 'err');
+          toast(T('imageUploadFailed'), 'err');
         }
       } finally {
         pickBtn.disabled = false;
@@ -1777,15 +1780,15 @@ function updateDynamicTags() {
       sidebarList.innerHTML = `
         <div class="tw-trend-empty" style="padding:1.25rem 1rem; color:var(--text-muted); font-size:0.85rem; text-align:center;">
           <i class="ri-hashtag" style="font-size:1.4rem; display:block; margin-bottom:0.35rem; color:var(--amed-green);"></i>
-          Henüz taraftar etiketi yok.<br/>İlk etiketi (#) gönderinizde siz oluşturun!
+          ${T('noTrendsYet')}
         </div>
       `;
     } else {
       sidebarList.innerHTML = userHashtags.slice(0, 8).map(({ tag, count }) => `
-        <div class="tw-trend-item" data-action="insert-tag" data-tag="${esc(tag)}" title="Bu etiketi ekle">
-          <div class="tw-trend-meta">Kullanıcı Gündemi · Trend</div>
+        <div class="tw-trend-item" data-action="insert-tag" data-tag="${esc(tag)}" title="${esc(tag)}">
+          <div class="tw-trend-meta">${T('userTrending')}</div>
           <div class="tw-trend-tag">${esc(tag)}</div>
-          <div class="tw-trend-count" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${count} gönderi</div>
+          <div class="tw-trend-count" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">${count} ${T('postsWord').toLowerCase()}</div>
         </div>
       `).join('');
     }
@@ -1802,7 +1805,7 @@ function renderListShell() {
   const tagsRowHTML = `
     <div class="tw-quick-tags-row" id="twQuickTagsRow" style="${userHashtags.length === 0 ? 'display:none;' : ''}">
       ${userHashtags.length ? `
-        <span class="tw-tags-label" title="Kullanıcı Etiketleri"><i class="ri-fire-line" style="color: var(--amed-red);"></i> Trend:</span>
+        <span class="tw-tags-label" title="${T('userTrending')}"><i class="ri-fire-line" style="color: var(--amed-red);"></i> Trend:</span>
         ${userHashtags.slice(0, 6).map(({ tag }) => `
           <button type="button" class="tw-tag-pill" data-action="insert-tag" data-tag="${esc(tag)}">${esc(tag)}</button>
         `).join('')}
@@ -1821,7 +1824,7 @@ function renderListShell() {
             
             <!-- Açılır Hashtag Çekmecesi -->
             <div id="composerHashtagBar" class="composer-pop-drawer" style="display:none;">
-              <div class="composer-drawer-title"><i class="ri-hashtag"></i> Popüler Amedspor Etiketleri</div>
+              <div class="composer-drawer-title"><i class="ri-hashtag"></i> ${T('popularTags')}</div>
               <div class="composer-tag-pills-row">
                 ${['#Amedspor', '#DirenAmedspor', '#ŞampiyonAmed', '#Diyarbakır', '#HedefSüperLig', '#YeşilKırmızı', '#Barikat', '#MorAmed', '#BizAmediz', '#AmedsporSevdası'].map(tag => `<button type="button" class="composer-tag-chip" data-action="insert-tag" data-tag="${tag}">${tag}</button>`).join('')}
               </div>
@@ -1833,11 +1836,11 @@ function renderListShell() {
             ${tagsRowHTML}
             <div class="tw-composer-bar">
               <div class="tw-composer-tools">
-                <label for="twComposerImgFile" class="tw-tool-btn" id="composerImgBtn" title="Görsel Ekle" role="button" tabindex="0">
+                <label for="twComposerImgFile" class="tw-tool-btn" id="composerImgBtn" title="${T('addImage')}" role="button" tabindex="0">
                   <i class="ri-image-line"></i>
                   <input type="file" id="twComposerImgFile" accept="image/png,image/jpeg,image/webp,image/gif" style="position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; z-index:-1;" />
                 </label>
-                <button type="button" class="tw-tool-btn" id="composerHashtagBtn" data-action="toggle-composer-tags" title="Hashtag Ekle"><i class="ri-hashtag"></i></button>
+                <button type="button" class="tw-tool-btn" id="composerHashtagBtn" data-action="toggle-composer-tags" title="Hashtag"><i class="ri-hashtag"></i></button>
                 <span class="tw-char-counter" id="quickPostCount">0 / 280</span>
               </div>
               <button type="submit" class="tw-tweet-btn" id="quickPostSubmitBtn">
@@ -1934,14 +1937,14 @@ function renderUserTweet(t) {
   return `
     <article class="tweet-card ${t.is_pinned ? 'is-pinned' : ''}" id="thread-${t.id}">
       <div class="tweet-layout">
-        <div class="tweet-avatar-col" data-action="view-user-profile" data-user-id="${t.author_id || ''}" style="cursor:pointer;" title="Profili Gör">
+        <div class="tweet-avatar-col" data-action="view-user-profile" data-user-id="${t.author_id || ''}" style="cursor:pointer;" title="${T('viewProfileTooltip')}">
           ${avatarHTML(author, 44)}
         </div>
         <div class="tweet-body-col">
           <div class="tweet-header">
             <div class="tweet-user-meta">
-              <span class="tweet-display-name" data-action="view-user-profile" data-user-id="${t.author_id || ''}" style="cursor:pointer;" title="Profili Gör">${esc(author.display_name || author.username || 'Amedsporlu')}</span>
-              ${isAuthorAdmin ? `<i class="ri-verified-badge-fill tw-verified-badge" title="Yönetici"></i><span class="admin-badge">ADMIN</span>` : ''}
+              <span class="tweet-display-name" data-action="view-user-profile" data-user-id="${t.author_id || ''}" style="cursor:pointer;" title="${T('viewProfileTooltip')}">${esc(author.display_name || author.username || 'Amedspor')}</span>
+              ${isAuthorAdmin ? `<i class="ri-verified-badge-fill tw-verified-badge" title="${T('adminBadgeTitle')}"></i><span class="admin-badge">ADMIN</span>` : ''}
               ${author.favorite_player ? `<span class="fav-player-chip"><i class="ri-t-shirt-2-line"></i> ${esc(author.favorite_player)}</span>` : ''}
               <span class="tweet-handle" data-action="view-user-profile" data-user-id="${t.author_id || ''}" style="cursor:pointer;">@${esc(author.username || 'fan')}</span>
               <span class="tweet-separator">·</span>
@@ -1952,9 +1955,9 @@ function renderUserTweet(t) {
 
             <div class="tweet-menu-actions">
               ${(!isSelf && t.author_id) ? `
-                <button type="button" class="tw-follow-quick-btn ${isFollowing ? 'following' : ''}" data-action="toggle-follow" data-user-id="${t.author_id}" title="${isFollowing ? 'Takibi Bırak' : 'Takip Et'}">
+                <button type="button" class="tw-follow-quick-btn ${isFollowing ? 'following' : ''}" data-action="toggle-follow" data-user-id="${t.author_id}" title="${isFollowing ? T('unfollowBtn') : T('followBtn')}">
                   <i class="${isFollowing ? 'ri-user-check-line' : 'ri-user-add-line'}"></i>
-                  <span>${isFollowing ? 'Takip Ediliyor' : 'Takip Et'}</span>
+                  <span>${isFollowing ? T('followingBtn') : T('followBtn')}</span>
                 </button>
               ` : ''}
               ${isAdminUser ? `
@@ -1974,16 +1977,16 @@ function renderUserTweet(t) {
           </div>
 
           <div class="tweet-actions-bar">
-            <button class="tw-btn reply" data-action="open-thread" data-id="${t.id}" title="Yanıtla">
+            <button class="tw-btn reply" data-action="open-thread" data-id="${t.id}" title="${T('replyBtn')}">
               <i class="ri-chat-1-line"></i> <span>${t.reply_count || 0}</span>
             </button>
             <button class="tw-btn repost" data-action="share-thread" data-id="${t.id}" title="${T('share')}">
               <i class="ri-repeat-line"></i>
             </button>
-            <button class="tw-btn like ${S.likedThreads.has(t.id) ? 'liked' : ''}" data-action="like-thread" data-id="${t.id}" title="Beğen">
+            <button class="tw-btn like ${S.likedThreads.has(t.id) ? 'liked' : ''}" data-action="like-thread" data-id="${t.id}" title="${T('like')}">
               <i class="${S.likedThreads.has(t.id) ? 'ri-heart-3-fill' : 'ri-heart-3-line'}"></i> <span>${t.like_count || 0}</span>
             </button>
-            <button class="tw-btn share" data-action="share-thread" data-id="${t.id}" title="Paylaş">
+            <button class="tw-btn share" data-action="share-thread" data-id="${t.id}" title="${T('share')}">
               <i class="ri-share-line"></i>
             </button>
           </div>
@@ -2038,12 +2041,12 @@ async function renderThreadList() {
           <div class="puc-identity">
             <div class="puc-name-row">
               <h1 class="puc-name">${esc(p.display_name || p.username)}</h1>
-              ${isAdmin ? `<span class="admin-badge"><i class="ri-shield-star-fill"></i> ADMIN</span>` : `<span class="fan-badge"><i class="ri-heart-3-fill"></i> TARAFTAR</span>`}
+              ${isAdmin ? `<span class="admin-badge"><i class="ri-shield-star-fill"></i> ADMIN</span>` : `<span class="fan-badge"><i class="ri-heart-3-fill"></i> ${T('fanBadge')}</span>`}
             </div>
             <div class="puc-handle">@${esc(p.username || '')}</div>
             ${p.favorite_player ? `
               <div class="puc-player-row">
-                <span class="puc-player-pill" title="Desteklediği Futbolcu">
+                <span class="puc-player-pill" title="${T('favoritePlayer')}">
                   <i class="ri-t-shirt-2-fill"></i> ${esc(p.favorite_player)}
                 </span>
               </div>
@@ -2053,19 +2056,19 @@ async function renderThreadList() {
           <div class="puc-stats-grid">
             <div class="puc-stat-cell">
               <span class="puc-stat-num">${myPosts.length}</span>
-              <span class="puc-stat-lbl">Gönderi</span>
+              <span class="puc-stat-lbl">${T('postsWord')}</span>
             </div>
-            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${me()}" data-initial-tab="followers" title="Takipçileri Gör">
+            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${me()}" data-initial-tab="followers" title="${T('followersTab')}">
               <span class="puc-stat-num" id="pucFollowersCount">${followersCount}</span>
-              <span class="puc-stat-lbl">Takipçi</span>
+              <span class="puc-stat-lbl">${T('followers')}</span>
             </div>
-            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${me()}" data-initial-tab="following" title="Takip Edilenleri Gör">
+            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${me()}" data-initial-tab="following" title="${T('followingTab')}">
               <span class="puc-stat-num" id="pucFollowingCount">${followingCount}</span>
-              <span class="puc-stat-lbl">Takip Edilen</span>
+              <span class="puc-stat-lbl">${T('following')}</span>
             </div>
             <div class="puc-stat-cell">
               <span class="puc-stat-num">${totalLikes}</span>
-              <span class="puc-stat-lbl">Beğeni</span>
+              <span class="puc-stat-lbl">${T('likes')}</span>
             </div>
           </div>
         </div>
@@ -2171,8 +2174,8 @@ function renderThreadHead() {
         </div>
 
         <div class="tweet-detail-metrics">
-          <span><strong>${t.like_count || 0}</strong> Beğeni</span>
-          <span><strong>${t.reply_count || 0}</strong> Yanıt</span>
+          <span><strong>${t.like_count || 0}</strong> ${T('likes')}</span>
+          <span><strong>${t.reply_count || 0}</strong> ${T('replies')}</span>
         </div>
 
         <div class="tweet-actions-bar detail">
@@ -2327,12 +2330,12 @@ function checkSpamRules(body) {
   const clean = String(body || '').trim();
   // 1. Karakter tekrarı (Örn: aaaaaaaaaaaaaaaa...)
   if (/([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ.!?])\1{14,}/.test(clean)) {
-    return 'Mesajınızda spam amaçlı aşırı karakter tekrarı tespit edildi.';
+    return T('repeatedCharError');
   }
   // 2. Çoklu link (URL Flood)
   const links = clean.match(/https?:\/\//gi);
   if (links && links.length > 3) {
-    return 'Spam koruması: Bir paylaşımda en fazla 3 bağlantı (link) yer alabilir.';
+    return T('linkLimitError');
   }
   return null;
 }
@@ -2349,12 +2352,12 @@ async function handleThreadForm(form) {
   const category_id = Number(fd.get('category_id'));
   if (title.length < 4) return formMsg(form, T('titleTooShort'));
   if (!body) return formMsg(form, T('errorGeneric'));
-  if (body.length > 280) return formMsg(form, 'Gönderi en fazla 280 karakter olabilir.');
+  if (body.length > 280) return formMsg(form, T('postMax280'));
 
   const spamErr = checkSpamRules(body);
   if (spamErr) return formMsg(form, spamErr);
   if (S.lastThreadBody && S.lastThreadBody === body.toLowerCase().trim() && (Date.now() - S.lastThreadTime < 10 * 60 * 1000)) {
-    return formMsg(form, 'Bu içeriği yakın zamanda zaten paylaştınız. Lütfen aynı gönderiyi tekrar paylaşmayın.');
+    return formMsg(form, T('duplicatePostError'));
   }
 
   isSubmittingThread = true;
@@ -2390,12 +2393,12 @@ async function handleReplyForm(form) {
   const input = form.querySelector('textarea');
   const body = input.value.trim();
   if (!body || !S.thread) return;
-  if (body.length > 280) return toast('Yanıt en fazla 280 karakter olabilir.', 'err');
+  if (body.length > 280) return toast(T('replyMax280'), 'err');
 
   const spamErr = checkSpamRules(body);
   if (spamErr) return toast(spamErr, 'err');
   if (S.lastReplyBody && S.lastReplyBody === body.toLowerCase().trim() && (Date.now() - S.lastReplyTime < 10 * 60 * 1000)) {
-    return toast('Bu yanıtı yakın zamanda zaten paylaştınız. Lütfen aynı yanıtı tekrar paylaşmayın.', 'err');
+    return toast(T('duplicatePostError'), 'err');
   }
 
   isSubmittingReply = true;
@@ -2552,7 +2555,7 @@ function insertTag(tag) {
   cur = cur.replace(/#\s*$/, '').trim();
   const add = (cur.length > 0 ? ' ' : '') + tag + ' ';
   if ((cur + add).length > 280) {
-    toast('Hashtag eklendiğinde 280 karakter sınırı aşılacağı için eklenemedi.', 'warn');
+    toast(T('tagCharLimitErr'), 'warn');
     return;
   }
   input.value = (cur.length > 0 ? cur + ' ' : '') + tag + ' ';
@@ -2585,7 +2588,7 @@ async function shareThread(id) {
 
 async function uploadComposerImage(file) {
   if (file.size > 8 * 1024 * 1024) {
-    toast('Görsel boyutu en fazla 8MB olabilir.', 'err');
+    toast(T('imageMax8MB'), 'err');
     return;
   }
   const preview = $('composerMediaPreview');
@@ -2593,7 +2596,7 @@ async function uploadComposerImage(file) {
     preview.style.display = 'block';
     preview.innerHTML = `
       <div style="display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; border-radius:10px; background:var(--bg-subtle); font-size:0.85rem; color:var(--text-secondary); border:1px solid var(--border-light);">
-        <i class="ri-loader-4-line spin" style="color:var(--amed-green); font-size:1.1rem;"></i> Görsel yükleniyor, lütfen bekleyin...
+        <i class="ri-loader-4-line spin" style="color:var(--amed-green); font-size:1.1rem;"></i> ${T('uploadingImage')}
       </div>
     `;
   }
@@ -2608,21 +2611,21 @@ async function uploadComposerImage(file) {
       });
       const json = await res.json();
       if (!res.ok || !json.ok || !json.url) {
-        throw new Error(json.error || 'Fotoğraf yüklenemedi.');
+        throw new Error(json.error || T('imageUploadFailed'));
       }
       S.composerUploadedImage = json.url;
       if (preview) {
         preview.innerHTML = `
           <div class="composer-preview-box">
-            <img src="${esc(json.url)}" alt="Önizleme" />
-            <button type="button" class="composer-preview-remove" data-action="remove-composer-img" title="Görseli Kaldır">
+            <img src="${esc(json.url)}" alt="Preview" />
+            <button type="button" class="composer-preview-remove" data-action="remove-composer-img" title="${T('removeImage')}">
               <i class="ri-close-line"></i>
             </button>
           </div>
         `;
       }
       $('composerImgBtn')?.classList.add('has-image');
-      toast('Görsel başarıyla eklendi! 📸');
+      toast(T('imageUploadSuccess'));
     } catch (err) {
       if (preview) {
         preview.style.display = 'none';
@@ -2630,7 +2633,7 @@ async function uploadComposerImage(file) {
       }
       $('composerImgBtn')?.classList.remove('has-image');
       S.composerUploadedImage = null;
-      toast(err.message || 'Fotoğraf yüklenemedi.', 'err');
+      toast(err.message || T('imageUploadFailed'), 'err');
     }
   };
   reader.readAsDataURL(file);
@@ -2648,14 +2651,14 @@ async function handleQuickPost(form) {
 
   if (!body && !S.composerUploadedImage) return toast(T('errorGeneric'), 'err');
   if (body.length > 280) {
-    return toast('Gönderi 280 karakterden uzun olamaz.', 'err');
+    return toast(T('postMax280'), 'err');
   }
 
   const spamErr = checkSpamRules(body);
   if (spamErr) return toast(spamErr, 'err');
 
   if (S.lastQuickPostBody && S.lastQuickPostBody === body.toLowerCase().trim() && (Date.now() - S.lastQuickPostTime < 10 * 60 * 1000)) {
-    return toast('Bu içeriği kısa süre önce zaten paylaştınız. Lütfen aynı gönderiyi tekrar paylaşmayın.', 'err');
+    return toast(T('duplicatePostError'), 'err');
   }
 
   if (S.composerUploadedImage) {
@@ -2663,8 +2666,8 @@ async function handleQuickPost(form) {
   }
 
   if (!title) {
-    title = body ? body.slice(0, 60).replace(/[\r\n]+/g, ' ').trim() : 'Amedspor Taraftar Paylaşımı';
-    if (title.length < 4) title = 'Amedspor Taraftar Paylaşımı';
+    title = body ? body.slice(0, 60).replace(/[\r\n]+/g, ' ').trim() : (T('defaultPostTitle') || 'Amedspor');
+    if (title.length < 4) title = T('defaultPostTitle') || 'Amedspor';
   }
 
   isSubmittingThread = true;
@@ -2948,7 +2951,7 @@ function bindEvents() {
         } else {
           loadThreads().then(() => renderThreadList());
         }
-        toast(`"${tag}" etiketine göre filtrelendi.`);
+        toast(`"${tag}" ${T('filteredByTag')}`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
@@ -2962,7 +2965,7 @@ function bindEvents() {
         }
         const fileInp = $('twComposerImgFile');
         if (fileInp) fileInp.value = '';
-        toast('Görsel kaldırıldı.');
+        toast(T('removeImage') || 'Görsel kaldırıldı.');
         return;
       }
       case 'toggle-pin':
@@ -3027,8 +3030,18 @@ function bindEvents() {
 
   // Dil değişince toplulukla ilgili tüm metinleri yenile
   document.addEventListener('amed:lang', () => {
+    applyStaticLabels();
     renderHeaderAuth();
     renderForum();
+    if (document.getElementById('profileTabContent')?.classList.contains('active')) {
+      renderProfilePage();
+    }
+    if (document.getElementById('settingsTabContent')?.classList.contains('active')) {
+      renderSettingsPage();
+    }
+    if (followsModalUserId && document.getElementById('followsModal')?.classList.contains('open')) {
+      switchFollowsTab(followsModalActiveTab);
+    }
   });
 }
 

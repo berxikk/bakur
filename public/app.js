@@ -122,7 +122,8 @@ function trHomeAway(pm) {
 }
 
 function setLanguage(lang) {
-  if (!I18N[lang]) return;
+  const root = (typeof window !== 'undefined' && window.I18N) ? window.I18N : (typeof I18N !== 'undefined' ? I18N : {});
+  if (!root[lang]) return;
   appState.lang = lang;
   localStorage.setItem('amed_lang', lang);
   document.documentElement.lang = lang;
@@ -131,26 +132,45 @@ function setLanguage(lang) {
     btn.classList.toggle('active', btn.dataset.lang === lang);
   });
 
-  // Tüm statik data-i18n etiketlerini güncelle
-  document.querySelectorAll('[data-i18n]').forEach((el) => {
-    const key = el.getAttribute('data-i18n');
+  // 1. i18n.js universal translation scanner
+  if (typeof window !== 'undefined' && typeof window.translateDocument === 'function') {
+    window.translateDocument(lang);
+  }
+
+  // 2. Tüm statik data-i18n ve data-ci18n etiketlerini güncelle
+  document.querySelectorAll('[data-i18n], [data-ci18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n') || el.getAttribute('data-ci18n');
     const val = t(key);
     if (typeof val === 'string') {
       el.textContent = val;
     }
   });
 
-  // Arama kutusu placeholder
-  const searchInput = document.getElementById('playerSearchInput');
-  if (searchInput) {
-    searchInput.placeholder = t('searchPlaceholder');
-  }
+  // 3. Placeholder ve title güncellemeleri
+  document.querySelectorAll('[data-i18n-ph], [data-ci18n-ph]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-ph') || el.getAttribute('data-ci18n-ph');
+    const val = t(key);
+    if (typeof val === 'string') el.placeholder = val;
+  });
 
-  // Takvim gün başlıkları
+  // 4. Arama kutuları
+  const searchInput = document.getElementById('playerSearchInput');
+  if (searchInput) searchInput.placeholder = t('searchPlaceholder');
+  const forumSearch = document.getElementById('forumSearch');
+  if (forumSearch) forumSearch.placeholder = t('searchPostsPlaceholder');
+
+  // 5. Takvim gün başlıkları
   const weekdaysEl = document.getElementById('calendarWeekdays');
   if (weekdaysEl) {
     const days = t('weekdays');
-    weekdaysEl.innerHTML = days.map((d) => `<div>${d}</div>`).join('');
+    weekdaysEl.innerHTML = Array.isArray(days) ? days.map((d) => `<div>${d}</div>`).join('') : '';
+  }
+
+  // 6. Tema buton metni
+  const labelSidebar = document.getElementById('sidebarThemeLabel');
+  if (labelSidebar) {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-theme');
+    labelSidebar.textContent = isDark ? t('lightTheme') : t('darkTheme');
   }
 
   renderAll();
@@ -262,7 +282,7 @@ function setTheme(theme) {
   if (iconTop) iconTop.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
   if (iconSidebar) iconSidebar.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
   if (iconMobile) iconMobile.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
-  if (labelSidebar) labelSidebar.textContent = isDark ? 'Açık Mod' : 'Koyu Mod';
+  if (labelSidebar) labelSidebar.textContent = isDark ? t('lightTheme') : t('darkTheme');
 }
 
 function toggleTheme() {
@@ -387,7 +407,7 @@ function buildSpotlightCard(match, type) {
       <div class="spotlight-score">${match.homeScore?.current ?? 0} - ${match.awayScore?.current ?? 0}</div>
       ${xgHTML}
       <div class="spotlight-sub" style="color:#fb7185; font-weight:700;">
-        <i class="ri-broadcast-line"></i> ${match.status?.description || 'Canlı Oynanıyor'}
+        <i class="ri-broadcast-line"></i> ${match.status?.description || t('liveMatchInProgress') || 'Canlı Oynanıyor'}
       </div>
     `;
   } else if (isFinished) {
@@ -501,7 +521,7 @@ function buildSpotlightCard(match, type) {
       ${extraPreviewHTML}
 
       <div class="spotlight-footer">
-        <span><i class="ri-map-pin-line"></i> ${match.venue || 'Diyarbakır Stadyumu'}</span>
+        <span><i class="ri-map-pin-line"></i> ${match.venue || t('venueDefault') || 'Diyarbakır Stadyumu'}</span>
         <span class="spotlight-cta">${ctaLabel} <i class="ri-arrow-right-line"></i></span>
       </div>
     </div>
@@ -794,7 +814,7 @@ function renderPastDetailsSection() {
 
           <div class="past-card-footer">
             <div>
-              <i class="ri-map-pin-line"></i> ${m.venue || 'Diyarbakır Stadyumu'}
+              <i class="ri-map-pin-line"></i> ${m.venue || t('venueDefault') || 'Diyarbakır Stadyumu'}
               ${m.referee ? ` • <i class="ri-user-voice-line"></i> ${t('refereeWord')}: ${m.referee}` : ''}
             </div>
             <button class="btn-full-report" onclick="event.stopPropagation(); openMatchModal('${m.id}', 'stats')">
@@ -1087,7 +1107,7 @@ function renderFixturesCalendar() {
   const mobileListEl = document.getElementById('calMobileMatchesList');
   const mobileTitleEl = document.getElementById('calMobileMatchesTitle');
   if (mobileTitleEl && months[calMonth]) {
-    mobileTitleEl.textContent = `${months[calMonth]} ${calYear} Karşılaşmaları`;
+    mobileTitleEl.textContent = `${months[calMonth]} ${calYear} ${t('monthMatchesSuffix') || 'Karşılaşmaları'}`;
   }
   if (mobileListEl) {
     const monthMatches = allMatches.filter((m) => {
@@ -1096,7 +1116,7 @@ function renderFixturesCalendar() {
     }).sort((a, b) => a.startTimestamp - b.startTimestamp);
 
     if (monthMatches.length === 0) {
-      mobileListEl.innerHTML = `<div class="cal-mobile-no-matches"><i class="ri-calendar-line"></i> Bu ayda planlanan karşılaşma bulunmuyor.</div>`;
+      mobileListEl.innerHTML = `<div class="cal-mobile-no-matches"><i class="ri-calendar-line"></i> ${t('calMobileNoMatches') || 'Bu ayda planlanan karşılaşma bulunmuyor.'}</div>`;
     } else {
       mobileListEl.innerHTML = monthMatches.map((m) => {
         const isHome = String(m.homeTeam.id) === AMED_ID;
@@ -1112,7 +1132,7 @@ function renderFixturesCalendar() {
 
         if (isLive) {
           badgeClass = 'loss';
-          badgeText = 'CANLI ' + (m.homeScore?.current ?? 0) + ' - ' + (m.awayScore?.current ?? 0);
+          badgeText = `${t('liveBadge') || 'CANLI'} ${(m.homeScore?.current ?? 0)} - ${(m.awayScore?.current ?? 0)}`;
         } else if (isFinished) {
           const amedScore = isHome ? m.homeScore?.current : m.awayScore?.current;
           const oppScore = isHome ? m.awayScore?.current : m.homeScore?.current;
@@ -1127,7 +1147,7 @@ function renderFixturesCalendar() {
         return `
           <div class="cal-mobile-match-card" onclick="openMatchModal('${m.id}', '${clickTab}')">
             <div class="cal-mobile-match-left">
-              <span class="cal-mobile-match-date"><i class="ri-calendar-line"></i> ${dateStr} · ${m.roundInfo?.round ? `${m.roundInfo.round}. Hafta` : 'Süper Lig'}</span>
+              <span class="cal-mobile-match-date"><i class="ri-calendar-line"></i> ${dateStr} · ${m.roundInfo?.round ? `${m.roundInfo.round}. ${t('matchweekWord') || 'Hafta'}` : 'Süper Lig'}</span>
               <div class="cal-mobile-match-teams">
                 <img src="${isHome ? amedLogo : oppLogo}" alt="" />
                 <span>${isHome ? 'Amedspor' : opp.name}</span>
@@ -1214,10 +1234,10 @@ function renderSquad() {
       if (hasStats) {
         statsHtml = `
           <div class="player-performance-strip">
-            ${goals > 0 ? `<span class="pstat-pill goal" title="${goals} Gol"><i class="ri-football-line"></i> ${goals} Gol</span>` : ''}
-            ${assists > 0 ? `<span class="pstat-pill assist" title="${assists} Asist"><i class="ri-magic-line"></i> ${assists} Asist</span>` : ''}
-            ${yellowCards > 0 ? `<span class="pstat-pill yellow-card" title="${yellowCards} Sarı Kart"><span class="mini-card-icon yellow"></span> ${yellowCards} Sarı</span>` : ''}
-            ${redCards > 0 ? `<span class="pstat-pill red-card" title="${redCards} Kırmızı Kart"><span class="mini-card-icon red"></span> ${redCards} Kırmızı</span>` : ''}
+            ${goals > 0 ? `<span class="pstat-pill goal" title="${goals} ${t('goalWord') || 'Gol'}"><i class="ri-football-line"></i> ${goals} ${t('goalWord') || 'Gol'}</span>` : ''}
+            ${assists > 0 ? `<span class="pstat-pill assist" title="${assists} ${t('assistWord') || 'Asist'}"><i class="ri-magic-line"></i> ${assists} ${t('assistWord') || 'Asist'}</span>` : ''}
+            ${yellowCards > 0 ? `<span class="pstat-pill yellow-card" title="${yellowCards} ${t('yellowCardTooltip') || 'Sarı Kart'}"><span class="mini-card-icon yellow"></span> ${yellowCards} ${t('yellowCard') || 'Sarı'}</span>` : ''}
+            ${redCards > 0 ? `<span class="pstat-pill red-card" title="${redCards} ${t('redCardTooltip') || 'Kırmızı Kart'}"><span class="mini-card-icon red"></span> ${redCards} ${t('redCard') || 'Kırmızı'}</span>` : ''}
           </div>
         `;
       }
@@ -1410,7 +1430,7 @@ function renderModalHeader() {
   if (isLive) {
     statusSubHTML = `
       <div class="live-beacon">
-        <span class="beacon-dot"></span> CANLI ${ev.status?.clock || ''} • ${ev.status?.description || 'Oynanıyor'}
+        <span class="beacon-dot"></span> ${t('liveBadge') || 'CANLI'} ${ev.status?.clock || ''} • ${ev.status?.description || t('playingStatus') || 'Oynanıyor'}
       </div>
     `;
   }
@@ -1418,7 +1438,7 @@ function renderModalHeader() {
   let xgHTML = '';
   if (intel?.xG) {
     xgHTML = `
-      <div class="modal-xg-pill" title="Beklenen Gol Değeri (Expected Goals)">
+      <div class="modal-xg-pill" title="${t('xgTooltip') || 'Beklenen Gol Değeri (Expected Goals)'}">
         <span>xG <strong>${intel.xG.home}</strong></span>
         <span class="xg-dot">•</span>
         <span>xG <strong>${intel.xG.away}</strong></span>
@@ -1433,7 +1453,7 @@ function renderModalHeader() {
     const pH = possStat.homeValue || parseInt(possStat.home) || 50;
     const pA = 100 - pH;
     possessionBarHTML = `
-      <div class="modal-possession-bar" title="Topla Oynama: %${pH} - %${pA}">
+      <div class="modal-possession-bar" title="${getStatLabel('possessionPct')}: %${pH} - %${pA}">
         <div class="poss-fill home" style="width: ${pH}%"></div>
         <div class="poss-fill away" style="width: ${pA}%"></div>
       </div>
@@ -1619,7 +1639,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-goal',
       icon: '<i class="ri-football-line"></i>',
       badgeIcon: '<i class="ri-football-line"></i>',
-      label: 'GOL'
+      label: t('commGoal') || 'GOL'
     };
   }
 
@@ -1629,7 +1649,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-red',
       icon: '<span class="comm-card-box red"></span>',
       badgeIcon: '<span class="comm-card-box red" style="width:8px;height:11px;"></span>',
-      label: 'KIRMIZI KART'
+      label: t('commRed') || 'KIRMIZI KART'
     };
   }
 
@@ -1639,7 +1659,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-yellow',
       icon: '<span class="comm-card-box yellow"></span>',
       badgeIcon: '<span class="comm-card-box yellow" style="width:8px;height:11px;"></span>',
-      label: 'SARI KART'
+      label: t('commYellow') || 'SARI KART'
     };
   }
 
@@ -1649,7 +1669,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-penalty',
       icon: '<i class="ri-focus-2-line"></i>',
       badgeIcon: '<i class="ri-focus-2-line"></i>',
-      label: 'PENALTI'
+      label: t('commPenalty') || 'PENALTI'
     };
   }
 
@@ -1659,7 +1679,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-foul',
       icon: '<i class="ri-alarm-warning-line"></i>',
       badgeIcon: '<i class="ri-alarm-warning-line"></i>',
-      label: 'FAUL'
+      label: t('commFoul') || 'FAUL'
     };
   }
 
@@ -1669,7 +1689,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-sub',
       icon: '<i class="ri-repeat-line"></i>',
       badgeIcon: '<i class="ri-repeat-line"></i>',
-      label: 'DEĞİŞİKLİK'
+      label: t('commSub') || 'DEĞİŞİKLİK'
     };
   }
 
@@ -1679,7 +1699,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-corner',
       icon: '<i class="ri-flag-line"></i>',
       badgeIcon: '<i class="ri-flag-line"></i>',
-      label: 'KORNER'
+      label: t('commCorner') || 'KORNER'
     };
   }
 
@@ -1689,7 +1709,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-offside',
       icon: '<i class="ri-flag-2-line"></i>',
       badgeIcon: '<i class="ri-flag-2-line"></i>',
-      label: 'OFSAYT'
+      label: t('commOffside') || 'OFSAYT'
     };
   }
 
@@ -1699,7 +1719,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-save',
       icon: '<i class="ri-shield-check-line"></i>',
       badgeIcon: '<i class="ri-shield-check-line"></i>',
-      label: 'KURTARIŞ'
+      label: t('commSave') || 'KURTARIŞ'
     };
   }
 
@@ -1709,7 +1729,7 @@ function getCommentaryMeta(c) {
       badgeClass: 'comm-type-whistle',
       icon: '<i class="ri-volume-vibrate-line"></i>',
       badgeIcon: '<i class="ri-volume-vibrate-line"></i>',
-      label: 'DÜDÜK'
+      label: t('whistleWord') || 'DÜDÜK'
     };
   }
 
@@ -1811,19 +1831,19 @@ function renderModalBody() {
     const sqHTML = intel?.shotsQuality ? `
       <div class="shot-quality-grid">
         <div class="shot-quality-item">
-          <div class="shot-quality-lbl"><i class="ri-focus-3-line"></i> Beklenen Gol (xG)</div>
+          <div class="shot-quality-lbl"><i class="ri-focus-3-line"></i> ${getStatLabel('expectedGoals')}</div>
           <div class="shot-quality-val" style="color:var(--amed-green);">${intel.xG.home} <span style="color:var(--text-muted); font-size:0.75rem;">vs</span> ${intel.xG.away}</div>
         </div>
         <div class="shot-quality-item">
-          <div class="shot-quality-lbl"><i class="ri-magic-line"></i> Net Gol Fırsatı</div>
+          <div class="shot-quality-lbl"><i class="ri-magic-line"></i> ${t('bigChance')}</div>
           <div class="shot-quality-val">${intel.shotsQuality.bigChances.homeCreated} <span style="color:var(--text-muted); font-size:0.75rem;">vs</span> ${intel.shotsQuality.bigChances.awayCreated}</div>
         </div>
         <div class="shot-quality-item">
-          <div class="shot-quality-lbl"><i class="ri-crosshair-2-line"></i> Ceza Sahası İçi Şut</div>
+          <div class="shot-quality-lbl"><i class="ri-crosshair-2-line"></i> ${t('shotsInsideBox')}</div>
           <div class="shot-quality-val">${intel.shotsQuality.insideBox.home} <span style="color:var(--text-muted); font-size:0.75rem;">vs</span> ${intel.shotsQuality.insideBox.away}</div>
         </div>
         <div class="shot-quality-item">
-          <div class="shot-quality-lbl"><i class="ri-flashlight-line"></i> Tehlikeli Hücum</div>
+          <div class="shot-quality-lbl"><i class="ri-flashlight-line"></i> ${t('dangerousAttacks')}</div>
           <div class="shot-quality-val">${intel.attacks.dangerous.home} <span style="color:var(--text-muted); font-size:0.75rem;">vs</span> ${intel.attacks.dangerous.away}</div>
         </div>
       </div>
@@ -1833,9 +1853,9 @@ function renderModalBody() {
     const momentumHTML = intel?.momentum ? `
       <div class="momentum-card">
         <div class="momentum-gauge-header">
-          <span><i class="ri-pulse-line" style="color:var(--amed-green);"></i> Maç Momentum & Baskı Eğrisi</span>
+          <span><i class="ri-pulse-line" style="color:var(--amed-green);"></i> ${t('momentumCurve')}</span>
           <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-secondary);">
-            Baskı: <strong style="color:var(--amed-green);">%${intel.currentPressure.pressureHome} ${ev.homeTeam.shortName || ev.homeTeam.name}</strong> - <strong style="color:var(--amed-red);">%${intel.currentPressure.pressureAway} ${ev.awayTeam.shortName || ev.awayTeam.name}</strong>
+            ${t('pressure')}: <strong style="color:var(--amed-green);">%${intel.currentPressure.pressureHome} ${ev.homeTeam.shortName || ev.homeTeam.name}</strong> - <strong style="color:var(--amed-red);">%${intel.currentPressure.pressureAway} ${ev.awayTeam.shortName || ev.awayTeam.name}</strong>
           </span>
         </div>
         <div class="momentum-bars-grid">
@@ -1859,17 +1879,17 @@ function renderModalBody() {
     const corridorHTML = intel?.attacks?.zones ? `
       <div class="attack-corridors-grid">
         <div class="corridor-box">
-          <div class="corridor-title">Sol Kanat Hücumu</div>
+          <div class="corridor-title">${t('leftFlankAttack')}</div>
           <div class="corridor-bar-track"><div class="corridor-bar-fill" style="width:${intel.attacks.zones.home.left}%"></div></div>
           <div class="corridor-pct">%${intel.attacks.zones.home.left}</div>
         </div>
         <div class="corridor-box">
-          <div class="corridor-title">Merkez Hücum</div>
+          <div class="corridor-title">${t('centerAttack')}</div>
           <div class="corridor-bar-track"><div class="corridor-bar-fill" style="width:${intel.attacks.zones.home.center}%"></div></div>
           <div class="corridor-pct">%${intel.attacks.zones.home.center}</div>
         </div>
         <div class="corridor-box">
-          <div class="corridor-title">Sağ Kanat Hücumu</div>
+          <div class="corridor-title">${t('rightFlankAttack')}</div>
           <div class="corridor-bar-track"><div class="corridor-bar-fill" style="width:${intel.attacks.zones.home.right}%"></div></div>
           <div class="corridor-pct">%${intel.attacks.zones.home.right}</div>
         </div>
@@ -1882,12 +1902,12 @@ function renderModalBody() {
         <div class="motm-left">
           <div class="motm-star-circle"><i class="ri-star-fill"></i></div>
           <div>
-            <div class="motm-tag">⭐ Maçın En Değerli Oyuncusu (MOTM)</div>
+            <div class="motm-tag">${t('motmTitle')}</div>
             <div class="motm-name">#${intel.motm.jersey || ''} ${intel.motm.name}</div>
             <div class="motm-team">${intel.motm.team}</div>
           </div>
         </div>
-        <div class="motm-rating-badge" title="Canlı Oyuncu Performans Puanı (10 üzerinden)">
+        <div class="motm-rating-badge" title="${t('motmTooltip')}">
           ${intel.motm.rating}
         </div>
       </div>
@@ -1898,7 +1918,7 @@ function renderModalBody() {
       <div class="live-standings-impact-box">
         <div class="live-standings-impact-icon"><i class="ri-trophy-line"></i></div>
         <div>
-          <div style="font-weight:700; color:var(--text-main); margin-bottom:0.15rem;">Canlı Puan Durumu Etkisi</div>
+          <div style="font-weight:700; color:var(--text-main); margin-bottom:0.15rem;">${t('liveStandingsImpact')}</div>
           <div style="color:var(--text-secondary);">${intel.standingsImpact.summary}</div>
         </div>
       </div>
@@ -1991,7 +2011,7 @@ function renderModalBody() {
       container.innerHTML = `
         <div style="margin-bottom: 1.15rem; padding: 0.95rem 1.25rem; background: var(--amed-green-soft); border: 1px solid var(--amed-green-border); border-radius: 12px; font-size: 0.84rem; color: var(--amed-green); font-weight: 600; display:flex; align-items:center; gap:0.65rem;">
           <i class="ri-information-line" style="font-size: 1.35rem; flex-shrink: 0;"></i>
-          <span>Bu karşılaşma henüz başlamadığından maç içi canlı verileri başlama düdüğü ile aktif olacaktır. İki takımın sezonluk karşılaştırması ve oynanmış maç raporu aşağıdadır:</span>
+          <span>${t('matchNotStartedNotice')}</span>
         </div>
         ${renderPreviousMatchesAndComparisonHTML()}
       `;
@@ -2005,16 +2025,16 @@ function renderModalBody() {
           <i class="ri-apps-2-line"></i> ${t('filterAll')} (${allStats.length})
         </button>
         <button class="comm-filter-chip ${catFilter === 'attack' ? 'active' : ''}" onclick="setStatsCategoryFilter('attack')">
-          <i class="ri-focus-3-line"></i> Hücum & xG
+          <i class="ri-focus-3-line"></i> ${t('tabAttackXg')}
         </button>
         <button class="comm-filter-chip ${catFilter === 'passing' ? 'active' : ''}" onclick="setStatsCategoryFilter('passing')">
-          <i class="ri-share-forward-line"></i> Pas Dağılımı
+          <i class="ri-share-forward-line"></i> ${t('tabPassing')}
         </button>
         <button class="comm-filter-chip ${catFilter === 'defense' ? 'active' : ''}" onclick="setStatsCategoryFilter('defense')">
-          <i class="ri-shield-check-line"></i> Savunma & İkili Mücadele
+          <i class="ri-shield-check-line"></i> ${t('tabDefense')}
         </button>
         <button class="comm-filter-chip ${catFilter === 'discipline' ? 'active' : ''}" onclick="setStatsCategoryFilter('discipline')">
-          <i class="ri-file-warning-line"></i> Disiplin
+          <i class="ri-file-warning-line"></i> ${t('statCategories')?.discipline || 'Disiplin'}
         </button>
       </div>
     `;
@@ -2037,7 +2057,7 @@ function renderModalBody() {
     container.innerHTML = `
       ${filterButtonsHTML}
       <div style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
-        <span><i class="ri-checkbox-multiple-line" style="color: var(--amed-green);"></i> <strong>${allStats.length}</strong> Detaylı Canlı Veri</span>
+        <span><i class="ri-checkbox-multiple-line" style="color: var(--amed-green);"></i> <strong>${allStats.length}</strong> ${t('detailedLiveStats')}</span>
         <span style="font-weight: 700;"><span style="color: var(--amed-green);">■ ${ev.homeTeam?.name}</span> &nbsp;|&nbsp; <span style="color: var(--amed-red);">■ ${ev.awayTeam?.name}</span></span>
       </div>
       <div class="stats-category-grid">
@@ -2110,7 +2130,7 @@ function renderModalBody() {
       const ratingCls = (p.rating || 0) >= 7.6 ? 'high' : (p.rating || 0) >= 6.8 ? 'med' : 'low';
       const isMotm = p.id && String(p.id) === String(intel?.motm?.id);
       const ratingPill = p.rating
-        ? `<span class="player-rating-pill ${ratingCls}" title="Sofascore Canlı Oyuncu Puanı">${isMotm ? '⭐ ' : ''}${p.rating}</span>`
+        ? `<span class="player-rating-pill ${ratingCls}" title="${t('playerRatingTooltip')}">${isMotm ? '⭐ ' : ''}${p.rating}</span>`
         : '';
 
       return `
@@ -2192,19 +2212,19 @@ function renderModalBody() {
           <i class="ri-chat-1-line"></i> ${t('filterAll')} (${rawComm.length})
         </button>
         <button class="comm-filter-chip ${commFilter === 'goal' ? 'active' : ''}" onclick="setCommentaryFilter('goal')">
-          <i class="ri-football-line" style="color:var(--amed-green);"></i> Goller
+          <i class="ri-football-line" style="color:var(--amed-green);"></i> ${t('commFilterGoals')}
         </button>
         <button class="comm-filter-chip ${commFilter === 'cards' ? 'active' : ''}" onclick="setCommentaryFilter('cards')">
-          <i class="ri-stop-fill" style="color:#eab308;"></i> Kartlar & VAR
+          <i class="ri-stop-fill" style="color:#eab308;"></i> ${t('commFilterCards')}
         </button>
         <button class="comm-filter-chip ${commFilter === 'foul' ? 'active' : ''}" onclick="setCommentaryFilter('foul')">
-          <i class="ri-alarm-warning-line" style="color:#f97316;"></i> Fauller & Düdük
+          <i class="ri-alarm-warning-line" style="color:#f97316;"></i> ${t('commFilterFouls')}
         </button>
         <button class="comm-filter-chip ${commFilter === 'shot' ? 'active' : ''}" onclick="setCommentaryFilter('shot')">
-          <i class="ri-focus-3-line" style="color:#3b82f6;"></i> Şutlar & Fırsatlar
+          <i class="ri-focus-3-line" style="color:#3b82f6;"></i> ${t('commFilterShots')}
         </button>
         <button class="comm-filter-chip ${commFilter === 'sub' ? 'active' : ''}" onclick="setCommentaryFilter('sub')">
-          <i class="ri-arrow-left-right-line" style="color:#8b5cf6;"></i> Değişiklikler
+          <i class="ri-arrow-left-right-line" style="color:#8b5cf6;"></i> ${t('commFilterSubs')}
         </button>
       </div>
     `;
