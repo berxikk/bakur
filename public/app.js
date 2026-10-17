@@ -53,14 +53,23 @@ if (appState.data?.rounds?.currentRound) {
 // Çok dilli sözlük public/i18n.js dosyasından yüklenir
 const I18N = (typeof window !== "undefined" && window.I18N) ? window.I18N : {};
 
+function getI18n() {
+  return (typeof window !== "undefined" && window.I18N) ? window.I18N : I18N;
+}
+
 function t(key) {
-  const dict = I18N[appState.lang] || I18N.tr;
-  return dict[key] !== undefined ? dict[key] : I18N.tr[key] || key;
+  if (typeof window !== 'undefined' && typeof window.getTranslation === 'function') {
+    return window.getTranslation(key, appState.lang);
+  }
+  const i18nObj = getI18n();
+  const dict = i18nObj[appState.lang] || i18nObj.tr || {};
+  return dict[key] !== undefined ? dict[key] : (i18nObj.tr?.[key] ?? key);
 }
 
 function getStatLabel(statName, fallbackLabel) {
-  const dict = I18N[appState.lang] || I18N.tr;
-  return dict.statsMap?.[statName] || I18N.tr.statsMap?.[statName] || fallbackLabel || statName;
+  const i18nObj = getI18n();
+  const dict = i18nObj[appState.lang] || i18nObj.tr || {};
+  return dict.statsMap?.[statName] || i18nObj.tr?.statsMap?.[statName] || fallbackLabel || statName;
 }
 
 function getPosLabel(posCode) {
@@ -116,7 +125,8 @@ function trHomeAway(pm) {
 }
 
 function setLanguage(lang) {
-  if (!I18N[lang]) return;
+  const i18nObj = getI18n();
+  if (i18nObj && Object.keys(i18nObj).length > 0 && !i18nObj[lang]) return;
   appState.lang = lang;
   localStorage.setItem('amed_lang', lang);
   document.documentElement.lang = lang;
@@ -125,14 +135,23 @@ function setLanguage(lang) {
     btn.classList.toggle('active', btn.dataset.lang === lang);
   });
 
-  // Tüm statik data-i18n etiketlerini güncelle
-  document.querySelectorAll('[data-i18n]').forEach((el) => {
-    const key = el.getAttribute('data-i18n');
-    const val = t(key);
-    if (typeof val === 'string') {
-      el.textContent = val;
-    }
-  });
+  // Tüm data-i18n, data-ci18n ve data-i18n-ph etiketlerini evrensel olarak güncelle
+  if (window.translateDocument) {
+    window.translateDocument(lang);
+  } else {
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.getAttribute('data-i18n');
+      const val = t(key);
+      if (typeof val === 'string') el.textContent = val;
+    });
+  }
+
+  // Sidebar tema değiştirici etiketi
+  const labelSidebar = document.getElementById('sidebarThemeLabel');
+  if (labelSidebar) {
+    const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+    labelSidebar.textContent = isDark ? (t('themeLight') || 'Açık Mod') : (t('themeDark') || 'Koyu Mod');
+  }
 
   // Arama kutusu placeholder
   const searchInput = document.getElementById('playerSearchInput');
@@ -256,7 +275,7 @@ function setTheme(theme) {
   if (iconTop) iconTop.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
   if (iconSidebar) iconSidebar.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
   if (iconMobile) iconMobile.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
-  if (labelSidebar) labelSidebar.textContent = isDark ? 'Açık Mod' : 'Koyu Mod';
+  if (labelSidebar) labelSidebar.textContent = isDark ? (t('themeLight') || 'Açık Mod') : (t('themeDark') || 'Koyu Mod');
 }
 
 function toggleTheme() {
@@ -1081,7 +1100,7 @@ function renderFixturesCalendar() {
   const mobileListEl = document.getElementById('calMobileMatchesList');
   const mobileTitleEl = document.getElementById('calMobileMatchesTitle');
   if (mobileTitleEl && months[calMonth]) {
-    mobileTitleEl.textContent = `${months[calMonth]} ${calYear} Karşılaşmaları`;
+    mobileTitleEl.textContent = `${months[calMonth]} ${calYear} ${t('monthMatchesSuffix') || 'Karşılaşmaları'}`;
   }
   if (mobileListEl) {
     const monthMatches = allMatches.filter((m) => {
@@ -1090,7 +1109,7 @@ function renderFixturesCalendar() {
     }).sort((a, b) => a.startTimestamp - b.startTimestamp);
 
     if (monthMatches.length === 0) {
-      mobileListEl.innerHTML = `<div class="cal-mobile-no-matches"><i class="ri-calendar-line"></i> Bu ayda planlanan karşılaşma bulunmuyor.</div>`;
+      mobileListEl.innerHTML = `<div class="cal-mobile-no-matches"><i class="ri-calendar-line"></i> ${t('calMobileNoMatches') || 'Bu ayda planlanan karşılaşma bulunmuyor.'}</div>`;
     } else {
       mobileListEl.innerHTML = monthMatches.map((m) => {
         const isHome = String(m.homeTeam.id) === AMED_ID;
@@ -1106,7 +1125,7 @@ function renderFixturesCalendar() {
 
         if (isLive) {
           badgeClass = 'loss';
-          badgeText = 'CANLI ' + (m.homeScore?.current ?? 0) + ' - ' + (m.awayScore?.current ?? 0);
+          badgeText = `${t('liveWord') || 'CANLI'} ${m.homeScore?.current ?? 0} - ${m.awayScore?.current ?? 0}`;
         } else if (isFinished) {
           const amedScore = isHome ? m.homeScore?.current : m.awayScore?.current;
           const oppScore = isHome ? m.awayScore?.current : m.homeScore?.current;
@@ -1117,11 +1136,12 @@ function renderFixturesCalendar() {
         }
 
         const dateStr = formatDateTR(m.startTimestamp);
+        const roundText = m.roundInfo?.round ? `${m.roundInfo.round}. ${t('roundWord') || 'Hafta'}` : (t('superLig') || 'Süper Lig');
 
         return `
           <div class="cal-mobile-match-card" onclick="openMatchModal('${m.id}', '${clickTab}')">
             <div class="cal-mobile-match-left">
-              <span class="cal-mobile-match-date"><i class="ri-calendar-line"></i> ${dateStr} · ${m.roundInfo?.round ? `${m.roundInfo.round}. Hafta` : 'Süper Lig'}</span>
+              <span class="cal-mobile-match-date"><i class="ri-calendar-line"></i> ${dateStr} · ${roundText}</span>
               <div class="cal-mobile-match-teams">
                 <img src="${isHome ? amedLogo : oppLogo}" alt="" />
                 <span>${isHome ? 'Amedspor' : opp.name}</span>

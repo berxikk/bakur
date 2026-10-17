@@ -9,14 +9,18 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
 });
 
 /* ---------- ÇEVİRİLER ---------- */
-// Çok dilli sözlük public/i18n.js dosyasından yüklenir
-import { CI18N } from "./i18n.js";
-
 const lang = () => {
   const l = localStorage.getItem('amed_lang') || document.documentElement.lang || 'tr';
-  return CI18N[l] ? l : 'tr';
+  const cDict = (typeof window !== 'undefined' && window.CI18N) ? window.CI18N : {};
+  return cDict[l] ? l : 'tr';
 };
-const T = (key) => CI18N[lang()][key] ?? CI18N.tr[key] ?? key;
+const T = (key) => {
+  if (typeof window !== 'undefined' && typeof window.getTranslation === 'function') {
+    return window.getTranslation(key, lang());
+  }
+  const cDict = (typeof window !== 'undefined' && window.CI18N) ? window.CI18N : {};
+  return cDict[lang()]?.[key] ?? cDict.tr?.[key] ?? key;
+};
 
 /* ---------- DURUM ---------- */
 const S = {
@@ -325,12 +329,12 @@ function openAuth(mode = 'login') {
         <label class="c-field"><span>${T('password')}</span><input type="password" name="password" autocomplete="new-password" minlength="6" required /></label>
         <label class="c-field">
           <span style="display:flex; align-items:center; gap:0.4rem; color:var(--amed-green); font-weight:700;">
-            <i class="ri-shield-star-fill"></i> Taraftar Doğrulama Parolası
+            <i class="ri-shield-star-fill"></i> ${T('pledgeTitle')}
           </span>
           <input type="text" name="amedPledge" placeholder="her bijî amedspor" required autocomplete="off" />
         </label>
         <div style="font-size:0.76rem; color:var(--text-secondary); margin-top:-0.4rem; margin-bottom:0.75rem; line-height:1.35;">
-          Kayıt olabilmek için bu alana <strong>"her bijî amedspor"</strong> yazmalısınız.
+          ${T('pledgeDesc')}
         </div>
         <div class="c-form-msg"></div>
         <button type="submit" class="c-btn c-btn-primary">${T('signup')}</button>
@@ -375,7 +379,7 @@ async function handleAuthForm(form) {
       let loginEmail = email;
       if (!loginEmail.includes('@')) {
         setBusy(form, false);
-        return formMsg(form, 'Hesap güvenliği ve gizlilik için lütfen kayıtlı e-posta adresinizi giriniz.');
+        return formMsg(form, T('emailLoginNotice'));
       }
       const { error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
       if (error) throw error;
@@ -392,7 +396,7 @@ async function handleAuthForm(form) {
       ];
       if (!validPledges.includes(pledge)) {
         setBusy(form, false);
-        return formMsg(form, 'Kayıt olabilmek için lütfen doğrulama kutusuna "her bijî amedspor" yazınız! 💚❤️');
+        return formMsg(form, T('pledgeError'));
       }
 
       const username = String(fd.get('username') || '').trim();
@@ -422,7 +426,7 @@ async function handleAuthForm(form) {
       let resetEmail = email;
       if (!resetEmail.includes('@')) {
         setBusy(form, false);
-        return formMsg(form, 'Lütfen şifre sıfırlama bağlantısının gönderileceği e-posta adresinizi giriniz.');
+        return formMsg(form, T('resetEmailPrompt'));
       }
       const { error } = await sb.auth.resetPasswordForEmail(resetEmail, { redirectTo });
       if (error) throw error;
@@ -572,7 +576,7 @@ async function getFollowCounts(userId) {
 async function toggleFollow(targetUserId) {
   if (!me()) {
     openAuth('login');
-    toast('Takip edebilmek için lütfen giriş yapın.');
+    toast(T('loginToFollow'));
     return;
   }
   if (!targetUserId || targetUserId === me()) return;
@@ -594,13 +598,13 @@ async function toggleFollow(targetUserId) {
         .eq('follower_id', me())
         .eq('following_id', targetUserId);
       if (error) throw error;
-      toast('Takipten çıkarıldı.');
+      toast(T('unfollowedToast'));
     } else {
       const { error } = await sb
         .from('user_follows')
         .insert({ follower_id: me(), following_id: targetUserId });
       if (error) throw error;
-      toast('Takip edildi!');
+      toast(T('followingBtn') + '!');
     }
   } catch (err) {
     if (isFollowing) {
@@ -610,7 +614,7 @@ async function toggleFollow(targetUserId) {
     }
     updateFollowButtons(targetUserId, isFollowing);
     console.error('toggleFollow error:', err);
-    toast(err.message || 'İşlem gerçekleştirilemedi.');
+    toast(err.message || T('actionFailed'));
   }
 
   const followersCountEl = $('pucFollowersCount');
@@ -634,7 +638,7 @@ let followsModalActiveTab = 'followers';
 async function openFollowsModal(userId, initialTab = 'followers') {
   const targetId = userId || S.viewingUserId || me();
   if (!targetId) {
-    toast('Takipçi listesini görüntülemek için lütfen giriş yapın.', 'info');
+    toast(T('loginToViewFollows'), 'info');
     openAuth('login');
     return;
   }
@@ -676,7 +680,7 @@ async function switchFollowsTab(tab) {
   listEl.innerHTML = `
     <div style="text-align:center; padding:2.5rem 1rem; color:var(--text-secondary);">
       <i class="ri-loader-4-line spin" style="font-size:2rem; color:var(--amed-green);"></i>
-      <div style="margin-top:0.6rem; font-size:0.88rem; font-weight:600;">Kullanıcılar yükleniyor...</div>
+      <div style="margin-top:0.6rem; font-size:0.88rem; font-weight:600;">${T('loadingUsers')}</div>
     </div>
   `;
 
@@ -702,10 +706,10 @@ async function switchFollowsTab(tab) {
         <div class="follows-empty">
           <i class="${isFollowers ? 'ri-group-line' : 'ri-user-follow-line'}" style="font-size:2.6rem; color:var(--text-muted); opacity:0.6;"></i>
           <div style="font-weight:700; margin-top:0.65rem; color:var(--text-main); font-size:0.95rem;">
-            ${isFollowers ? 'Henüz hiçbir takipçisi yok.' : 'Henüz kimseyi takip etmiyor.'}
+            ${isFollowers ? T('noFollowersYet') : T('noFollowingYet')}
           </div>
           <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">
-            ${isFollowers ? 'Amedspor ailesine katıldıkça takipçiler burada listelenecektir.' : 'Forumdaki diğer taraftarları takip ederek akışı zenginleştirebilirsiniz.'}
+            ${isFollowers ? T('noFollowersSub') : T('noFollowingSub')}
           </div>
         </div>
       `;
@@ -718,23 +722,23 @@ async function switchFollowsTab(tab) {
       const isAdmin = u.role === 'admin';
       return `
         <div class="follows-item">
-          <div class="follows-item-left" data-action="click-follow-user" data-user-id="${u.id}" style="cursor:pointer;" title="Profili Gör">
+          <div class="follows-item-left" data-action="click-follow-user" data-user-id="${u.id}" style="cursor:pointer;" title="${T('viewProfileTooltip')}">
             <div class="follows-avatar">
               ${avatarHTML(u, 44)}
             </div>
             <div class="follows-info">
               <div class="follows-name-row">
-                <span class="follows-display-name">${esc(u.display_name || u.username || 'Amedsporlu')}</span>
+                <span class="follows-display-name">${esc(u.display_name || u.username || T('fanFallback'))}</span>
                 ${isAdmin ? '<span class="admin-badge"><i class="ri-shield-star-fill"></i> ADMIN</span>' : ''}
               </div>
-              <div class="follows-username">@${esc(u.username || 'taraftar')}</div>
+              <div class="follows-username">@${esc(u.username || T('fanHandleFallback'))}</div>
               ${u.favorite_player ? `<div class="follows-player"><i class="ri-t-shirt-2-fill"></i> ${esc(u.favorite_player)}</div>` : ''}
             </div>
           </div>
           <div class="follows-item-right">
             ${!isMe && me() ? `
               <button type="button" class="tw-sidebar-follow-btn ${isFollowing ? 'following' : ''}" data-action="toggle-follow" data-user-id="${u.id}">
-                <span>${isFollowing ? 'Takip Ediliyor' : 'Takip Et'}</span>
+                <span>${isFollowing ? T('followingBtn') : T('followBtn')}</span>
               </button>
             ` : ''}
           </div>
@@ -746,7 +750,7 @@ async function switchFollowsTab(tab) {
     listEl.innerHTML = `
       <div class="follows-empty" style="color:var(--amed-red);">
         <i class="ri-error-warning-line" style="font-size:2rem;"></i>
-        <div style="margin-top:0.5rem; font-weight:600;">Liste yüklenirken bir sorun oluştu.</div>
+        <div style="margin-top:0.5rem; font-weight:600;">${T('loadListError')}</div>
       </div>
     `;
   }
@@ -760,18 +764,18 @@ function updateFollowButtons(targetUserId, isFollowing) {
       const icon = btn.querySelector('i');
       const text = btn.querySelector('span');
       if (icon) icon.className = isFollowing ? 'ri-user-check-line' : 'ri-user-add-line';
-      if (text) text.textContent = isFollowing ? 'Takip Ediliyor' : 'Takip Et';
-      btn.title = isFollowing ? 'Takibi Bırak' : 'Takip Et';
+      if (text) text.textContent = isFollowing ? T('followingBtn') : T('followBtn');
+      btn.title = isFollowing ? T('unfollowBtn') : T('followBtn');
     } else if (btn.classList.contains('tw-sidebar-follow-btn')) {
       const text = btn.querySelector('span');
-      if (text) text.textContent = isFollowing ? 'Takip Ediliyor' : 'Takip Et';
+      if (text) text.textContent = isFollowing ? T('followingBtn') : T('followBtn');
     } else {
       btn.classList.toggle('c-btn-ghost', isFollowing);
       btn.classList.toggle('c-btn-primary', !isFollowing);
       const icon = btn.querySelector('i');
       const text = btn.querySelector('span');
       if (icon) icon.className = isFollowing ? 'ri-user-unfollow-line' : 'ri-user-follow-line';
-      if (text) text.textContent = isFollowing ? 'Takibi Bırak' : 'Takip Et';
+      if (text) text.textContent = isFollowing ? T('unfollowBtn') : T('followBtn');
     }
   });
 }
@@ -793,18 +797,18 @@ async function loadSuggestedUsers() {
       const isFollowing = S.followingSet.has(u.id);
       return `
         <div class="tw-follow-item">
-          <div class="tw-follow-avatar-wrap" data-action="view-user-profile" data-user-id="${u.id}" style="cursor:pointer;" title="Profili Gör">
+          <div class="tw-follow-avatar-wrap" data-action="view-user-profile" data-user-id="${u.id}" style="cursor:pointer;" title="${T('viewProfileTooltip')}">
             ${avatarHTML(u, 40)}
           </div>
-          <div class="tw-follow-info" data-action="view-user-profile" data-user-id="${u.id}" style="cursor:pointer;" title="Profili Gör">
+          <div class="tw-follow-info" data-action="view-user-profile" data-user-id="${u.id}" style="cursor:pointer;" title="${T('viewProfileTooltip')}">
             <div class="tw-follow-name">
               <span>${esc(u.display_name || u.username)}</span>
-              ${u.role === 'admin' ? '<i class="ri-verified-badge-fill verified-badge" title="Yönetici"></i>' : ''}
+              ${u.role === 'admin' ? `<i class="ri-verified-badge-fill verified-badge" title="${T('adminBadgeTitle')}"></i>` : ''}
             </div>
-            <div class="tw-follow-handle">@${esc(u.username || 'taraftar')}</div>
+            <div class="tw-follow-handle">@${esc(u.username || T('fanHandleFallback'))}</div>
           </div>
           <button type="button" class="tw-sidebar-follow-btn ${isFollowing ? 'following' : ''}" data-action="toggle-follow" data-user-id="${u.id}">
-            <span>${isFollowing ? 'Takip Ediliyor' : 'Takip Et'}</span>
+            <span>${isFollowing ? T('followingBtn') : T('followBtn')}</span>
           </button>
         </div>
       `;
@@ -2608,21 +2612,21 @@ async function uploadComposerImage(file) {
       });
       const json = await res.json();
       if (!res.ok || !json.ok || !json.url) {
-        throw new Error(json.error || 'Fotoğraf yüklenemedi.');
+        throw new Error(json.error || T('imageUploadFailed'));
       }
       S.composerUploadedImage = json.url;
       if (preview) {
         preview.innerHTML = `
           <div class="composer-preview-box">
-            <img src="${esc(json.url)}" alt="Önizleme" />
-            <button type="button" class="composer-preview-remove" data-action="remove-composer-img" title="Görseli Kaldır">
+            <img src="${esc(json.url)}" alt="Preview" />
+            <button type="button" class="composer-preview-remove" data-action="remove-composer-img" title="${T('removeComposerImage')}">
               <i class="ri-close-line"></i>
             </button>
           </div>
         `;
       }
       $('composerImgBtn')?.classList.add('has-image');
-      toast('Görsel başarıyla eklendi! 📸');
+      toast(T('imageUploadSuccess'));
     } catch (err) {
       if (preview) {
         preview.style.display = 'none';
@@ -2630,7 +2634,7 @@ async function uploadComposerImage(file) {
       }
       $('composerImgBtn')?.classList.remove('has-image');
       S.composerUploadedImage = null;
-      toast(err.message || 'Fotoğraf yüklenemedi.', 'err');
+      toast(err.message || T('imageUploadFailed'), 'err');
     }
   };
   reader.readAsDataURL(file);
@@ -3027,8 +3031,18 @@ function bindEvents() {
 
   // Dil değişince toplulukla ilgili tüm metinleri yenile
   document.addEventListener('amed:lang', () => {
+    applyStaticLabels();
     renderHeaderAuth();
-    renderForum();
+    loadSuggestedUsers();
+    if (S.view === 'profile') {
+      renderProfilePage();
+    } else if (S.view === 'settings') {
+      renderSettingsPage();
+    } else if (S.view === 'thread' && S.currentThread) {
+      renderThreadView(S.currentThread);
+    } else {
+      renderForum();
+    }
   });
 }
 
