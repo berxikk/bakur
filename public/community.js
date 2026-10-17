@@ -1522,7 +1522,7 @@ function renderSettingsPage() {
             <form class="c-form" id="formProfileMain" novalidate>
               <input type="hidden" name="avatar_url" id="pageSelectedAvatarInput" value="${esc(p.avatar_url || '')}" />
               
-              <!-- Özel Profil Resmi Yükleme Alanı (Bulut Hosting & NSFW Korumalı) -->
+              <!-- Profil Resmi Seçme Alanı -->
               <div class="avatar-upload-area">
                 <div class="avatar-preview-wrap" id="pageAvatarPreview">
                   ${avatarHTML(p, 64)}
@@ -1539,10 +1539,9 @@ function renderSettingsPage() {
                       </button>
                     ` : ''}
                   </div>
-                  <div class="upload-hint"><i class="ri-shield-check-line" style="color:var(--amed-green);"></i> PNG, JPG, WEBP (Maks. 5MB) - Bulut Barındırma & AI NSFW Korumalı</div>
+                  <div class="upload-hint"><i class="ri-image-line" style="color:var(--amed-green);"></i> PNG, JPG, WEBP (Maks. 8MB)</div>
                 </div>
               </div>
-              <div id="pageAvatarScanStatus" class="avatar-scan-status" style="display:none;"></div>
 
               <label class="c-field" style="margin-top:0.4rem;">
                 <span>${T('displayName')}</span>
@@ -1701,7 +1700,25 @@ function showCropDialog(dataUri, type = 'avatar') {
     modal.style.display = 'flex';
     modal.classList.add('open');
 
+    const onOutsideClick = (e) => {
+      if (e.target === modal) {
+        cleanup();
+        reject(new Error('Kırpma işlemi iptal edildi.'));
+      }
+    };
+    modal.addEventListener('click', onOutsideClick);
+
+    const onEscKey = (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('open')) {
+        cleanup();
+        reject(new Error('Kırpma işlemi iptal edildi.'));
+      }
+    };
+    document.addEventListener('keydown', onEscKey);
+
     const cleanup = () => {
+      modal.removeEventListener('click', onOutsideClick);
+      document.removeEventListener('keydown', onEscKey);
       modal.classList.remove('open');
       modal.style.display = 'none';
       if (currentCropper) {
@@ -1803,19 +1820,10 @@ function showCropDialog(dataUri, type = 'avatar') {
 }
 
 /**
- * Resim Yükleme, Kırpma ve Güvenlik Taramalı Yükleme Fonksiyonu
+ * Resim Yükleme ve Kırpma Fonksiyonu (Online NSFW denetimi arkaplanda sessizce çalışır)
  */
-async function uploadImageToHosting(file, statusBox, type = 'avatar') {
+async function uploadImageToHosting(file, type = 'avatar') {
   if (file.size > 8 * 1024 * 1024) {
-    if (statusBox) {
-      statusBox.style.display = 'block';
-      statusBox.innerHTML = `
-        <div class="nsfw-alert-error">
-          <i class="ri-error-warning-fill"></i>
-          <div><strong>Hata:</strong> ${T('fileTooLarge') || 'Görsel boyutu en fazla 8MB olabilir.'}</div>
-        </div>
-      `;
-    }
     throw new Error('Dosya boyutu çok büyük (Maks. 8MB).');
   }
 
@@ -1823,7 +1831,7 @@ async function uploadImageToHosting(file, statusBox, type = 'avatar') {
   const rawDataUri = await new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => resolve(e.target.result);
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('Dosya okunamadı.'));
     reader.readAsDataURL(file);
   });
 
@@ -1831,46 +1839,15 @@ async function uploadImageToHosting(file, statusBox, type = 'avatar') {
   const dataUri = await showCropDialog(rawDataUri, type);
   if (!dataUri) return null;
 
-  if (statusBox) {
-    statusBox.style.display = 'block';
-    statusBox.innerHTML = `
-      <div class="nsfw-scanning-box">
-        <i class="ri-loader-4-line spin"></i>
-        <span>${T('nsfwScanning') || 'Görsel taranıyor ve analiz ediliyor...'}</span>
-      </div>
-    `;
-  }
-
-  // 3. Online Harici NSFW Kontrolü
+  // 3. Online Harici NSFW Kontrolü (Arka planda sessiz denetim)
   try {
     const check = await verifyImageNSFW(dataUri);
     if (check?.isNSFW) {
-      if (statusBox) {
-        statusBox.innerHTML = `
-          <div class="nsfw-alert-error">
-            <i class="ri-shield-cross-fill" style="color:var(--amed-red); font-size:1.6rem;"></i>
-            <div>
-              <strong>${T('nsfwBlockedTitle')}</strong><br>
-              <span class="nsfw-reason-text">${esc(check.reason || 'Müstehcen / +18 içerik tespit edildi.')}</span>
-              <div class="nsfw-desc-sub">${T('nsfwBlockedDesc')}</div>
-            </div>
-          </div>
-        `;
-      }
-      throw new Error(check.reason || 'Müstehcen / +18 içerik tespit edildi.');
+      throw new Error('NSFW_BLOCKED');
     }
   } catch (nsfwErr) {
-    if (nsfwErr.message.includes('Müstehcen') || nsfwErr.message.includes('+18')) throw nsfwErr;
+    if (nsfwErr.message === 'NSFW_BLOCKED') throw nsfwErr;
     console.warn('NSFW kontrolü atlandı:', nsfwErr);
-  }
-
-  if (statusBox) {
-    statusBox.innerHTML = `
-      <div class="nsfw-scanning-box">
-        <i class="ri-loader-4-line spin"></i>
-        <span>Görsel kaydediliyor...</span>
-      </div>
-    `;
   }
 
   // 4. Sunucuya yükle (Profil resmi avatars dizinine gider)
@@ -1881,31 +1858,16 @@ async function uploadImageToHosting(file, statusBox, type = 'avatar') {
   });
   const uploadData = await uploadRes.json();
   if (!uploadRes.ok || !uploadData.url) {
-    throw new Error(uploadData.error || 'Görsel sunucuya yüklenemedi.');
-  }
-
-  if (statusBox) {
-    statusBox.innerHTML = `
-      <div class="nsfw-alert-success">
-        <i class="ri-checkbox-circle-fill" style="color:var(--amed-green); font-size:1.5rem;"></i>
-        <div>
-          <strong>${T('nsfwPassed')}</strong><br>
-          <span>Görsel başarıyla yüklendi.</span>
-        </div>
-      </div>
-    `;
+    throw new Error(uploadData.error || 'UPLOAD_FAILED');
   }
 
   return uploadData.url;
 }
 
-
-
 function initPageAvatarUploader() {
   const pickBtn = $('pickPageAvatarBtn');
   const fileInput = $('pageCustomAvatarFile');
   const removeBtn = $('removePageAvatarBtn');
-  const statusBox = $('pageAvatarScanStatus');
   const inp = $('pageSelectedAvatarInput');
   const preview = $('pageAvatarPreview');
 
@@ -1915,40 +1877,41 @@ function initPageAvatarUploader() {
       const dummyP = { ...(S.profile || {}), avatar_url: null };
       if (preview) preview.innerHTML = avatarHTML(dummyP, 64);
       removeBtn.style.display = 'none';
-      if (statusBox) statusBox.style.display = 'none';
       toast('Fotoğraf kaldırıldı. Kaydet butonuna basarak onaylayın.');
     });
   }
 
   if (pickBtn && fileInput) {
-    pickBtn.addEventListener('click', () => fileInput.click());
+    pickBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      fileInput.click();
+    });
+
     fileInput.addEventListener('change', async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
+      const origHtml = pickBtn.innerHTML;
       try {
-        const url = await uploadImageToHosting(file, statusBox, 'avatar');
+        pickBtn.disabled = true;
+        pickBtn.innerHTML = '<i class="ri-loader-4-line spin"></i> <span>Yükleniyor...</span>';
+
+        const url = await uploadImageToHosting(file, 'avatar');
         if (url) {
           if (inp) inp.value = url;
           if (preview) {
-            preview.innerHTML = `<img class="c-avatar" style="width:64px;height:64px;border:2px solid var(--amed-green)" src="${esc(url)}" alt="Avatar" />`;
+            preview.innerHTML = `<img class="c-avatar" style="width:64px;height:64px;border:2px solid var(--amed-green);object-fit:cover;" src="${esc(url)}?t=${Date.now()}" alt="Avatar" />`;
           }
           if (removeBtn) removeBtn.style.display = 'inline-flex';
           toast('Profil fotoğrafı seçildi. Kaydet butonuna basarak onaylayın.');
         }
       } catch (err) {
         if (err.message !== 'Kırpma işlemi iptal edildi.') {
-          console.error('Settings avatar upload error:', err);
-          if (statusBox) {
-            statusBox.innerHTML = `
-              <div class="nsfw-alert-error">
-                <i class="ri-error-warning-line"></i>
-                <div>${esc(err.message || 'Yükleme sırasında hata oluştu.')}</div>
-              </div>
-            `;
-          }
+          toast('Fotoğraf yüklenemedi.', 'err');
         }
       } finally {
+        pickBtn.disabled = false;
+        pickBtn.innerHTML = origHtml;
         fileInput.value = '';
       }
     });
@@ -3062,7 +3025,7 @@ async function uploadComposerImage(file) {
       });
       const json = await res.json();
       if (!res.ok || !json.ok || !json.url) {
-        throw new Error(json.error || 'Görsel yüklenemedi.');
+        throw new Error(json.error || 'Fotoğraf yüklenemedi.');
       }
       S.composerUploadedImage = json.url;
       if (preview) {
@@ -3082,7 +3045,7 @@ async function uploadComposerImage(file) {
         preview.innerHTML = '';
       }
       S.composerUploadedImage = null;
-      toast(err.message || 'Görsel yükleme hatası', 'err');
+      toast(err.message || 'Fotoğraf yüklenemedi.', 'err');
     }
   };
   reader.readAsDataURL(file);
@@ -3392,6 +3355,7 @@ function bindEvents() {
     if (e.target.id === 'twComposerImgFile') {
       const file = e.target.files?.[0];
       if (file) uploadComposerImage(file);
+      e.target.value = '';
     }
   });
 

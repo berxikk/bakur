@@ -2055,13 +2055,13 @@ async function checkOnlineNSFW(buffer, ext) {
       }
 
       if (body.nsfwBlocked) {
-        return sendJson(res, { error: 'Görsel +18 / NSFW filtresine takıldı.' }, 403);
+        return sendJson(res, { error: 'Fotoğraf yüklenemedi.' }, 403);
       }
 
       // Harici online NSFW servisi ile görseli doğrula
       const onlineNsfw = await checkOnlineNSFW(buffer, ext);
       if (onlineNsfw.isNSFW) {
-        return sendJson(res, { error: onlineNsfw.reason || 'Görsel +18 / NSFW filtresine takıldı.' }, 403);
+        return sendJson(res, { error: 'Fotoğraf yüklenemedi.' }, 403);
       }
 
       const isAvatar = pathname === '/api/upload-avatar' || body.type === 'avatar';
@@ -2087,7 +2087,7 @@ async function checkOnlineNSFW(buffer, ext) {
       });
     } catch (err) {
       console.error('Image upload failed:', err);
-      return sendJson(res, { error: err.message || 'Görsel yüklenemedi' }, 400);
+      return sendJson(res, { error: 'Fotoğraf yüklenemedi.' }, 400);
     }
   }
 
