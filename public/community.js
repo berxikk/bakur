@@ -694,7 +694,7 @@ function sanitizeImageUrl(url) {
   }
   if (str.startsWith('/uploads/')) {
     if (str.includes('..') || str.includes('\\')) return null;
-    if (!/^\/uploads\/[0-9a-zA-Z._-]+\.(png|jpg|jpeg|webp|gif)$/i.test(str)) return null;
+    if (!/^\/uploads\/[0-9a-zA-Z._\/-]+\.(png|jpg|jpeg|webp|gif)$/i.test(str)) return null;
     return str;
   }
   // Güvenli harici ve yerel domain görsel URL'leri
