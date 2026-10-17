@@ -645,10 +645,23 @@ function esc(str) {
 
 function formatPostContent(str) {
   if (!str) return '';
-  const escaped = esc(str);
-  return escaped
-    .replace(/(#[\p{L}\p{N}_]+)/gu, '<span class="soc-hashtag">$1</span>')
-    .replace(/(@[a-zA-Z0-9_.]+)/g, '<span class="soc-mention">$1</span>');
+  let imgHtml = '';
+  const imgRegex = /(https?:\/\/[^\s]+?\.(?:png|jpg|jpeg|webp|gif)(?:\?[^\s]*)?)/gi;
+  const matches = str.match(imgRegex);
+  let cleanText = str;
+  if (matches && matches.length > 0) {
+    const firstImg = matches[0];
+    cleanText = str.replace(firstImg, '').trim();
+    imgHtml = `
+      <div class="tweet-media-wrap" style="margin-top:0.65rem; border-radius:12px; overflow:hidden; border:1px solid var(--border-light); max-height:420px; background:var(--bg-subtle);">
+        <img src="${esc(firstImg)}" alt="Gönderi Görseli" style="width:100%; max-height:420px; object-fit:contain; display:block;" loading="lazy" />
+      </div>`;
+  }
+  const escaped = esc(cleanText);
+  const formatted = escaped
+    .replace(/(#[\p{L}\p{N}_]+)/gu, '<span class="soc-hashtag" style="color:var(--amed-green); font-weight:700; cursor:pointer;" data-action="insert-tag" data-tag="$1">$1</span>')
+    .replace(/(@[a-zA-Z0-9_.]+)/g, '<span class="soc-mention" style="color:var(--amed-green); font-weight:600;">$1</span>');
+  return formatted + imgHtml;
 }
 
 function ago(ts) {
@@ -1001,6 +1014,15 @@ function openAuth(mode = 'login') {
         <label class="c-field"><span>${T('username')}</span><input type="text" name="username" autocomplete="username" maxlength="24" required /></label>
         <label class="c-field"><span>${T('email')}</span><input type="email" name="email" autocomplete="email" required /></label>
         <label class="c-field"><span>${T('password')}</span><input type="password" name="password" autocomplete="new-password" minlength="6" required /></label>
+        <label class="c-field">
+          <span style="display:flex; align-items:center; gap:0.4rem; color:var(--amed-green); font-weight:700;">
+            <i class="ri-shield-star-fill"></i> Taraftar Doğrulama Parolası
+          </span>
+          <input type="text" name="amedPledge" placeholder="her bijî amedspor" required autocomplete="off" />
+        </label>
+        <div style="font-size:0.76rem; color:var(--text-secondary); margin-top:-0.4rem; margin-bottom:0.75rem; line-height:1.35;">
+          Kayıt olabilmek için bu alana <strong>"her bijî amedspor"</strong> yazmalısınız.
+        </div>
         <div class="c-form-msg"></div>
         <button type="submit" class="c-btn c-btn-primary">${T('signup')}</button>
       </form>
@@ -1052,6 +1074,20 @@ async function handleAuthForm(form) {
       if (error) throw error;
       closeDialog();
     } else if (kind === 'signup') {
+      const pledge = String(fd.get('amedPledge') || '').trim().toLowerCase();
+      const validPledges = [
+        'her bijî amedspor',
+        'her biji amedspor',
+        'her biji amed spor',
+        'her bijî amed spor',
+        'herbijiamedspor',
+        'herbijîamedspor'
+      ];
+      if (!validPledges.includes(pledge)) {
+        setBusy(form, false);
+        return formMsg(form, 'Kayıt olabilmek için lütfen doğrulama kutusuna "her bijî amedspor" yazınız! 💚❤️');
+      }
+
       const username = String(fd.get('username') || '').trim();
       if (!/^[A-Za-z0-9_.]{3,24}$/.test(username)) {
         setBusy(form, false);
@@ -2326,12 +2362,33 @@ function renderListShell() {
           ${avatarHTML(p, 46)}
           <div class="tw-composer-main">
             <textarea id="quickPostInput" rows="3" maxlength="280" placeholder="${T('composerPlaceholder')}" required></textarea>
+            
+            <!-- Görsel Önizleme Alanı -->
+            <div id="composerMediaPreview" class="composer-media-preview" style="display:none;"></div>
+            
+            <!-- Açılır Emoji Çekmecesi -->
+            <div id="composerEmojiBar" class="composer-pop-drawer" style="display:none;">
+              <div class="composer-drawer-title"><i class="ri-emotion-line"></i> Emoji Seç</div>
+              <div class="composer-emoji-grid">
+                ${['💚', '❤️', '⚽', '🦅', '🦁', '🏆', '🔥', '👏', '👑', '🤍', '🟢', '🔴', '👊', '⚡', '🎉', '🏟️', '✊', '✌️', '🥇', '💯', '🎯', '🚀', '😍', '💪', '🙌', '🫡', '😎'].map(em => `<button type="button" class="composer-emoji-btn" data-action="insert-emoji" data-emoji="${em}">${em}</button>`).join('')}
+              </div>
+            </div>
+
+            <!-- Açılır Hashtag Çekmecesi -->
+            <div id="composerHashtagBar" class="composer-pop-drawer" style="display:none;">
+              <div class="composer-drawer-title"><i class="ri-hashtag"></i> Popüler Amedspor Etiketleri</div>
+              <div class="composer-tag-pills-row">
+                ${['#Amedspor', '#DirenAmedspor', '#ŞampiyonAmed', '#Diyarbakır', '#HedefSüperLig', '#YeşilKırmızı', '#Barikat', '#MorAmed', '#BizAmediz', '#AmedsporSevdası'].map(tag => `<button type="button" class="composer-tag-chip" data-action="insert-tag" data-tag="${tag}">${tag}</button>`).join('')}
+              </div>
+            </div>
+
             ${tagsRowHTML}
             <div class="tw-composer-bar">
               <div class="tw-composer-tools">
-                <span class="tw-tool-btn" title="Görsel"><i class="ri-image-line"></i></span>
-                <span class="tw-tool-btn" title="Etiket"><i class="ri-hashtag"></i></span>
-                <span class="tw-tool-btn" title="Emoji"><i class="ri-emotion-line"></i></span>
+                <button type="button" class="tw-tool-btn" data-action="trigger-composer-image" title="Görsel Yükle"><i class="ri-image-line"></i></button>
+                <input type="file" id="twComposerImgFile" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" />
+                <button type="button" class="tw-tool-btn" data-action="toggle-composer-tags" title="Hashtag Ekle"><i class="ri-hashtag"></i></button>
+                <button type="button" class="tw-tool-btn" data-action="toggle-composer-emoji" title="Emoji Ekle"><i class="ri-emotion-line"></i></button>
                 <span class="tw-char-counter" id="quickPostCount">0 / 280</span>
               </div>
               <button type="submit" class="tw-tweet-btn" id="quickPostSubmitBtn">
@@ -2982,6 +3039,10 @@ function updateQuickCharCount() {
 }
 
 function insertTag(tag) {
+  const tagBar = $('composerHashtagBar');
+  if (tagBar) tagBar.style.display = 'none';
+  const emojiBar = $('composerEmojiBar');
+  if (emojiBar) emojiBar.style.display = 'none';
   const input = $('quickPostInput');
   if (!input) {
     openNewThread();
@@ -3028,21 +3089,77 @@ async function shareThread(id) {
   }
 }
 
+async function uploadComposerImage(file) {
+  if (file.size > 5 * 1024 * 1024) {
+    toast('Görsel boyutu en fazla 5MB olabilir.', 'err');
+    return;
+  }
+  const preview = $('composerMediaPreview');
+  if (preview) {
+    preview.style.display = 'block';
+    preview.innerHTML = `
+      <div style="display:flex; align-items:center; gap:0.5rem; padding:0.6rem 0.85rem; border-radius:10px; background:var(--bg-subtle); font-size:0.85rem; color:var(--text-secondary); border:1px solid var(--border-light);">
+        <i class="ri-loader-4-line spin" style="color:var(--amed-green); font-size:1.1rem;"></i> Görsel yükleniyor, lütfen bekleyin...
+      </div>
+    `;
+  }
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const dataUri = e.target.result;
+    try {
+      const res = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUri })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok || !json.url) {
+        throw new Error(json.error || 'Görsel yüklenemedi.');
+      }
+      S.composerUploadedImage = json.url;
+      if (preview) {
+        preview.innerHTML = `
+          <div class="composer-preview-box">
+            <img src="${esc(json.url)}" alt="Önizleme" />
+            <button type="button" class="composer-preview-remove" data-action="remove-composer-img" title="Görseli Kaldır">
+              <i class="ri-close-line"></i>
+            </button>
+          </div>
+        `;
+      }
+      toast('Görsel başarıyla eklendi! 📸');
+    } catch (err) {
+      if (preview) {
+        preview.style.display = 'none';
+        preview.innerHTML = '';
+      }
+      S.composerUploadedImage = null;
+      toast(err.message || 'Görsel yükleme hatası', 'err');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
 async function handleQuickPost(form) {
   if (!requireLogin()) return;
   const input = $('quickPostInput');
   const titleInput = $('quickPostTitle');
   const catSelect = $('quickPostCat');
-  const body = (input?.value || '').trim();
+  let body = (input?.value || '').trim();
   let title = (titleInput?.value || '').trim();
   const category_id = Number(catSelect?.value || S.categories[0]?.id || 1);
 
-  if (!body) return toast(T('errorGeneric'), 'err');
+  if (!body && !S.composerUploadedImage) return toast(T('errorGeneric'), 'err');
   if (body.length > 280) {
     return toast('Gönderi 280 karakterden uzun olamaz.', 'err');
   }
+
+  if (S.composerUploadedImage) {
+    body = body ? `${body}\n${S.composerUploadedImage}` : S.composerUploadedImage;
+  }
+
   if (!title) {
-    title = body.slice(0, 60).replace(/[\r\n]+/g, ' ').trim();
+    title = body ? body.slice(0, 60).replace(/[\r\n]+/g, ' ').trim() : 'Amedspor Taraftar Paylaşımı';
     if (title.length < 4) title = 'Amedspor Taraftar Paylaşımı';
   }
 
@@ -3058,6 +3175,14 @@ async function handleQuickPost(form) {
   if (error) return toast(errMsg(error), 'err');
   if (input) input.value = '';
   if (titleInput) titleInput.value = '';
+  S.composerUploadedImage = null;
+  const preview = $('composerMediaPreview');
+  if (preview) {
+    preview.style.display = 'none';
+    preview.innerHTML = '';
+  }
+  const fileInp = $('twComposerImgFile');
+  if (fileInp) fileInp.value = '';
   updateQuickCharCount();
   toast(T('threadCreated'));
   await loadThreads();
@@ -3258,6 +3383,49 @@ function bindEvents() {
         return deleteThread(numId);
       case 'delete-post':
         return deletePost(numId);
+      case 'trigger-composer-image': {
+        $('twComposerImgFile')?.click();
+        return;
+      }
+      case 'toggle-composer-tags': {
+        const tagBar = $('composerHashtagBar');
+        const emojiBar = $('composerEmojiBar');
+        if (emojiBar) emojiBar.style.display = 'none';
+        if (tagBar) tagBar.style.display = tagBar.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+      case 'toggle-composer-emoji': {
+        const emojiBar = $('composerEmojiBar');
+        const tagBar = $('composerHashtagBar');
+        if (tagBar) tagBar.style.display = 'none';
+        if (emojiBar) emojiBar.style.display = emojiBar.style.display === 'none' ? 'block' : 'none';
+        return;
+      }
+      case 'insert-emoji': {
+        const em = el.dataset.emoji;
+        const input = $('quickPostInput');
+        if (input && em) {
+          const cur = input.value || '';
+          if (cur.length + em.length <= 280) {
+            input.value = cur + em;
+            input.focus();
+            updateQuickCharCount();
+          }
+        }
+        return;
+      }
+      case 'remove-composer-img': {
+        S.composerUploadedImage = null;
+        const preview = $('composerMediaPreview');
+        if (preview) {
+          preview.style.display = 'none';
+          preview.innerHTML = '';
+        }
+        const fileInp = $('twComposerImgFile');
+        if (fileInp) fileInp.value = '';
+        toast('Görsel kaldırıldı.');
+        return;
+      }
       case 'toggle-pin':
         return togglePinThread(numId);
       case 'toggle-lock':
@@ -3292,6 +3460,13 @@ function bindEvents() {
     else if (kind === 'thread') handleThreadForm(form);
     else if (kind === 'reply') handleReplyForm(form);
     else if (kind === 'quick-thread') handleQuickPost(form);
+  });
+
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'twComposerImgFile') {
+      const file = e.target.files?.[0];
+      if (file) uploadComposerImage(file);
+    }
   });
 
   let searchTimer;

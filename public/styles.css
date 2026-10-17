@@ -8681,12 +8681,112 @@ body {
   }
 }
 
+/* Composer Açılır Çekmeceler (Emoji, Hashtag ve Görsel Önizleme) */
+.composer-pop-drawer {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 0.65rem 0.85rem;
+  margin-top: 0.45rem;
+  box-shadow: var(--shadow-sm);
+  animation: fadeIn 0.15s ease;
+}
 
+.composer-drawer-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 0.45rem;
+}
 
+.composer-emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  max-height: 140px;
+  overflow-y: auto;
+}
 
+.composer-emoji-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.35rem;
+  cursor: pointer;
+  padding: 0.25rem 0.35rem;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
 
+.composer-emoji-btn:hover {
+  background: var(--bg-hover);
+  transform: scale(1.22);
+}
 
+.composer-tag-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
 
+.composer-tag-chip {
+  background: var(--amed-green-soft);
+  color: var(--amed-green);
+  border: 1px solid var(--amed-green-border);
+  padding: 0.25rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
 
+.composer-tag-chip:hover {
+  background: var(--amed-green);
+  color: #fff;
+  transform: translateY(-1px);
+}
 
+.composer-media-preview {
+  margin-top: 0.5rem;
+}
 
+.composer-preview-box {
+  position: relative;
+  display: inline-block;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  max-height: 200px;
+}
+
+.composer-preview-box img {
+  max-height: 200px;
+  max-width: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.composer-preview-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: background 0.15s ease;
+}
+
+.composer-preview-remove:hover {
+  background: var(--amed-red);
+}
