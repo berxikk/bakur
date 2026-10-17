@@ -19,7 +19,9 @@ const SECURITY_HEADERS = {
   'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
-  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'X-DNS-Prefetch-Control': 'off'
 };
 
 // Bellek İçi IP Hız Limitleyici (Rate Limiter - DDoS ve Brute Force Koruması)
@@ -2033,8 +2035,12 @@ async function uploadToExternalImageHost(buffer, ext) {
   return null;
 }
 
-  // Bağımsız Online NSFW Denetim Uç Noktası
+  // Bağımsız Online NSFW Denetim Uç Noktası (Anti-Spam & DoS Korumalı)
   if (req.method === 'POST' && pathname === '/api/check-nsfw') {
+    const nsfwLimit = checkRateLimit(clientIp, 'check-nsfw', 30, 5 * 60 * 1000);
+    if (!nsfwLimit.allowed) {
+      return sendJson(res, { isNSFW: false, error: `Çok fazla denetim isteği. Lütfen ${nsfwLimit.retryAfter} saniye bekleyin.` }, 429);
+    }
     try {
       const body = await parseJsonBody(req, 8 * 1024 * 1024);
       const dataUri = body.image || '';
@@ -2054,7 +2060,7 @@ async function uploadToExternalImageHost(buffer, ext) {
 
   // Profil Avatarı ve Gönderi Görseli Yükleme (public/uploads dizinine güvenli depolama)
   if (req.method === 'POST' && (pathname === '/api/upload-avatar' || pathname === '/api/upload-image')) {
-    const uploadLimit = checkRateLimit(clientIp, 'image-upload', 60, 10 * 60 * 1000);
+    const uploadLimit = checkRateLimit(clientIp, 'image-upload', 20, 10 * 60 * 1000);
     if (!uploadLimit.allowed) {
       return sendJson(res, { error: `Çok fazla görsel yükleme denemesi. Lütfen ${uploadLimit.retryAfter} saniye sonra tekrar deneyin.` }, 429);
     }

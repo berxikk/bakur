@@ -16,7 +16,7 @@ const CI18N = {
     logout: 'Çıkış Yap',
     signup: 'Kayıt Ol',
     email: 'E-posta',
-    emailOrUsername: 'E-posta veya Kullanıcı adı',
+    emailOrUsername: 'E-posta adresi',
     usernameNotFound: 'Bu kullanıcı adına ait bir hesap bulunamadı.',
     password: 'Şifre',
     username: 'Kullanıcı adı',
@@ -962,12 +962,8 @@ async function handleAuthForm(form) {
     if (kind === 'login') {
       let loginEmail = email;
       if (!loginEmail.includes('@')) {
-        const { data: resolvedEmail, error: rpcErr } = await sb.rpc('get_email_by_username', { p_username: loginEmail });
-        if (rpcErr || !resolvedEmail) {
-          setBusy(form, false);
-          return formMsg(form, T('usernameNotFound'));
-        }
-        loginEmail = resolvedEmail;
+        setBusy(form, false);
+        return formMsg(form, 'Hesap güvenliği ve gizlilik için lütfen kayıtlı e-posta adresinizi giriniz.');
       }
       const { error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
       if (error) throw error;
@@ -1013,8 +1009,8 @@ async function handleAuthForm(form) {
     } else if (kind === 'reset') {
       let resetEmail = email;
       if (!resetEmail.includes('@')) {
-        const { data: resolvedEmail } = await sb.rpc('get_email_by_username', { p_username: resetEmail });
-        if (resolvedEmail) resetEmail = resolvedEmail;
+        setBusy(form, false);
+        return formMsg(form, 'Lütfen şifre sıfırlama bağlantısının gönderileceği e-posta adresinizi giriniz.');
       }
       const { error } = await sb.auth.resetPasswordForEmail(resetEmail, { redirectTo });
       if (error) throw error;
@@ -2915,6 +2911,39 @@ function openNewThread() {
   );
 }
 
+function checkSpamRules(body) {
+  const clean = String(body || '').trim();
+  // 1. Karakter tekrarı (Örn: aaaaaaaaaaaaaaaa...)
+  if (/([a-zA-Z0-9ğüşıöçĞÜŞİÖÇ.!?])\1{14,}/.test(clean)) {
+    return 'Mesajınızda spam amaçlı aşırı karakter tekrarı tespit edildi.';
+  }
+  // 2. Çoklu link (URL Flood)
+  const links = clean.match(/https?:\/\//gi);
+  if (links && links.length > 3) {
+    return 'Spam koruması: Bir paylaşımda en fazla 3 bağlantı (link) yer alabilir.';
+  }
+  return null;
+}
+
+function startBtnCooldown(btnId, seconds) {
+  const btn = $(btnId);
+  if (!btn) return;
+  btn.disabled = true;
+  const originalHtml = btn.innerHTML;
+  let remaining = seconds;
+  btn.innerHTML = `<span>Bekleyin (${remaining}s)</span>`;
+  const iv = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(iv);
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    } else {
+      btn.innerHTML = `<span>Bekleyin (${remaining}s)</span>`;
+    }
+  }, 1000);
+}
+
 async function handleThreadForm(form) {
   if (!requireLogin()) return;
   const fd = new FormData(form);
@@ -2924,6 +2953,13 @@ async function handleThreadForm(form) {
   if (title.length < 4) return formMsg(form, T('titleTooShort'));
   if (!body) return formMsg(form, T('errorGeneric'));
   if (body.length > 280) return formMsg(form, 'Gönderi en fazla 280 karakter olabilir.');
+
+  const spamErr = checkSpamRules(body);
+  if (spamErr) return formMsg(form, spamErr);
+  if (S.lastThreadBody && S.lastThreadBody === body.toLowerCase() && (Date.now() - S.lastThreadTime < 10 * 60 * 1000)) {
+    return formMsg(form, 'Bu içeriği yakın zamanda zaten paylaştınız.');
+  }
+
   setBusy(form, true);
   const { data, error } = await sb.from('forum_threads').insert({
     title,
@@ -2933,6 +2969,9 @@ async function handleThreadForm(form) {
   }).select('id').single();
   setBusy(form, false);
   if (error) return formMsg(form, errMsg(error));
+  S.lastThreadBody = body.toLowerCase();
+  S.lastThreadTime = Date.now();
+  startBtnCooldown('quickPostSubmitBtn', 15);
   closeDialog();
   toast(T('threadCreated'));
   openThread(data.id);
@@ -2947,6 +2986,13 @@ async function handleReplyForm(form) {
   const body = input.value.trim();
   if (!body || !S.thread) return;
   if (body.length > 280) return toast('Yanıt en fazla 280 karakter olabilir.', 'err');
+
+  const spamErr = checkSpamRules(body);
+  if (spamErr) return toast(spamErr, 'err');
+  if (S.lastReplyBody && S.lastReplyBody === body.toLowerCase() && (Date.now() - S.lastReplyTime < 10 * 60 * 1000)) {
+    return toast('Bu yanıtı yakın zamanda zaten paylaştınız.', 'err');
+  }
+
   setBusy(form, true);
   const { error } = await sb.from('forum_posts').insert({
     thread_id: S.thread.id,
@@ -2955,6 +3001,8 @@ async function handleReplyForm(form) {
   });
   setBusy(form, false);
   if (error) return toast(errMsg(error), 'err');
+  S.lastReplyBody = body.toLowerCase();
+  S.lastReplyTime = Date.now();
   input.value = '';
   toast(T('replySent'));
   await loadThread(S.thread.id);
@@ -3189,6 +3237,13 @@ async function handleQuickPost(form) {
     return toast('Gönderi 280 karakterden uzun olamaz.', 'err');
   }
 
+  const spamErr = checkSpamRules(body);
+  if (spamErr) return toast(spamErr, 'err');
+
+  if (S.lastQuickPostBody && S.lastQuickPostBody === body.toLowerCase().trim() && (Date.now() - S.lastQuickPostTime < 10 * 60 * 1000)) {
+    return toast('Bu içeriği kısa süre önce zaten paylaştınız. Lütfen mükerrer/spam paylaşımdan kaçının.', 'err');
+  }
+
   if (S.composerUploadedImage) {
     body = body ? `${body}\n${S.composerUploadedImage}` : S.composerUploadedImage;
   }
@@ -3208,6 +3263,9 @@ async function handleQuickPost(form) {
   setBusy(form, false);
 
   if (error) return toast(errMsg(error), 'err');
+  S.lastQuickPostBody = body.toLowerCase().trim();
+  S.lastQuickPostTime = Date.now();
+  startBtnCooldown('quickPostSubmitBtn', 15);
   if (input) input.value = '';
   if (titleInput) titleInput.value = '';
   S.composerUploadedImage = null;
