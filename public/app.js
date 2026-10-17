@@ -1109,7 +1109,7 @@ function buildSpotlightCard(match, type) {
           </div>
           <span>%${possA} ${match.awayTeam.shortName || match.awayTeam.name}</span>
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 0.71rem; color: var(--text-main);">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.35rem; font-family: var(--font-mono); font-size: 0.71rem; color: var(--text-main);">
           <span>${getStatLabel('totalShots')}: <strong>${match.quickStats.shots?.[0] || '0'} - ${match.quickStats.shots?.[1] || '0'}</strong></span>
           <span>${getStatLabel('shotsOnTarget')}: <strong>${match.quickStats.shotsOnTarget?.[0] || '0'} - ${match.quickStats.shotsOnTarget?.[1] || '0'}</strong></span>
           <span>${getStatLabel('dangerousAttacks')}: <strong>${match.quickStats.dangerousAttacks?.[0] || '14'} - ${match.quickStats.dangerousAttacks?.[1] || '11'}</strong></span>
@@ -1134,7 +1134,7 @@ function buildSpotlightCard(match, type) {
           <span>${goalsText}</span>
           ${match.referee ? `<span style="color: var(--text-muted);"><i class="ri-user-voice-line"></i> ${match.referee}</span>` : ''}
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed var(--border-light); padding-top: 0.35rem; font-family: var(--font-mono); font-size: 0.71rem; color: var(--text-main);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 0.35rem; border-top: 1px dashed var(--border-light); padding-top: 0.35rem; font-family: var(--font-mono); font-size: 0.71rem; color: var(--text-main);">
           <span>${getStatLabel('possessionPct')}: <strong>${match.quickStats.possession[0]} - ${match.quickStats.possession[1]}</strong></span>
           <span>${getStatLabel('totalShots')}: <strong>${match.quickStats.shots[0]} - ${match.quickStats.shots[1]}</strong></span>
           <span>${getStatLabel('wonCorners')}: <strong>${match.quickStats.corners[0]} - ${match.quickStats.corners[1]}</strong></span>

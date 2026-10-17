@@ -71,8 +71,11 @@
   --shadow-modal: 0 20px 45px -10px rgba(15, 23, 42, 0.16), 0 8px 18px -6px rgba(15, 23, 42, 0.08);
 }
 
-html, body {
+html {
   background-color: #0C1014 !important;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
 }
 
 * {
@@ -88,6 +91,10 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+  position: relative;
 }
 
 /* =========================================================
@@ -99,6 +106,9 @@ body {
   display: flex;
   min-height: 100vh;
   background-color: var(--bg-page);
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* Sol Dikey Sidebar */
@@ -324,11 +334,14 @@ body {
 .app-main-content {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  max-width: 100vw;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   background-color: var(--bg-page);
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
 }
 
@@ -5343,9 +5356,11 @@ body {
 
 /* Twitter Tweet Composer */
 .tw-composer {
-  padding: 1.15rem 1.25rem;
+  padding: 0.85rem 1rem;
   border: 1px solid var(--border-light);
   background: var(--bg-card);
+  border-radius: var(--radius-md) !important;
+  margin-bottom: 0.65rem !important;
 }
 
 .tw-composer-row {
@@ -5497,26 +5512,42 @@ body {
   color: var(--text-secondary);
 }
 
-/* Tweet Stream & Cards (Sıkı, ferah ve kompakt aralık) */
+/* Tweet Stream & Cards (Twitter/X Tarzı Bütünleşik, Sıfır Boşluklu Akış) */
 .tw-tweets-stream {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
 }
 
-.tweet-card {
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  background: var(--bg-card);
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+.tweet-card,
+article.tweet-card {
+  margin: 0 !important;
+  margin-bottom: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-light) !important;
+  padding: 0.65rem 0.9rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease;
 }
-.tweet-card:hover {
-  border-color: rgba(5, 150, 105, 0.35);
-  background: rgba(255, 255, 255, 0.015);
+.tweet-card:last-child,
+article.tweet-card:last-child {
+  border-bottom: none !important;
 }
-.tweet-card.is-pinned {
-  border-left: 4px solid #eab308;
+.tweet-card:hover,
+article.tweet-card:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+}
+.tweet-card.is-pinned,
+article.tweet-card.is-pinned {
+  border-left: 3px solid #eab308 !important;
+  background: rgba(234, 179, 8, 0.03) !important;
 }
 
 .tweet-layout {
@@ -6937,79 +6968,186 @@ body {
   user-select: none;
 }
 
-/* 2. GENEL BAKIŞ (Overview Hero & 2x2 KPI Grid) */
-@media (max-width: 860px) {
+/* 2. GENEL BAKIŞ & TÜM MOBİL UYARLAMALAR (SIFIR TAŞMA & KESİNTİSİZ AKIŞ) */
+@media (max-width: 991px) {
+  .container {
+    padding: 0.75rem 0.5rem 2.5rem !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .card,
+  .tab-panel,
+  .dashboard-grid,
+  .hero-matches-grid,
+  .past-details-grid,
+  .squad-grid,
+  .tw-layout,
+  .tw-main-feed {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+  }
+
   .hero-matches-grid {
     grid-template-columns: 1fr !important;
-    gap: 0.75rem !important;
+    gap: 0.65rem !important;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.65rem !important;
   }
 }
 
 @media (max-width: 640px) {
-  .container {
-    padding: 0.85rem 0.65rem 2.5rem !important;
-  }
-  
-  /* 4'lü KPI Kartları: Mobilde 2x2 düzeninde çok daha modern ve kompakt */
+  /* 4'lü KPI Kartları: Mobilde 2x2 düzeninde, sıfır taşma */
   .kpi-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.5rem !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .kpi-card {
-    padding: 0.75rem 0.65rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    padding: 0.65rem 0.55rem !important;
     border-radius: var(--radius-md) !important;
+    box-sizing: border-box !important;
   }
   .kpi-value {
     font-size: 1.15rem !important;
   }
   .kpi-label {
-    font-size: 0.7rem !important;
+    font-size: 0.68rem !important;
   }
   .kpi-sub {
-    font-size: 0.66rem !important;
+    font-size: 0.64rem !important;
   }
   .kpi-icon-box {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 0.95rem !important;
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.9rem !important;
+  }
+  .form-pills {
+    display: flex !important;
+    gap: 3px !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+  }
+  .form-pill {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 0.62rem !important;
+    flex-shrink: 0 !important;
   }
 
-  /* Vitrin Maç Kartı İyileştirmesi */
+  /* Vitrin Maç Kartı (Spotlight) */
   .match-spotlight {
-    padding: 0.95rem 0.85rem !important;
+    padding: 0.85rem 0.75rem !important;
     border-radius: var(--radius-md) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
   .spotlight-teams {
     display: grid !important;
-    grid-template-columns: 1fr auto 1fr !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
     align-items: center !important;
-    gap: 0.4rem !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .spotlight-team {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
-    gap: 0.3rem !important;
+    gap: 0.25rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
   .spotlight-team-logo {
-    width: 44px !important;
-    height: 44px !important;
+    width: 40px !important;
+    height: 40px !important;
+    flex-shrink: 0 !important;
   }
   .spotlight-team-name {
-    font-size: 0.82rem !important;
+    font-size: 0.78rem !important;
     font-weight: 700 !important;
     line-height: 1.2 !important;
-    white-space: normal !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
   .spotlight-score {
-    font-size: 1.65rem !important;
+    font-size: 1.55rem !important;
+    flex-shrink: 0 !important;
+  }
+  .spotlight-countdown {
+    font-size: 1.2rem !important;
+    flex-shrink: 0 !important;
   }
   .spotlight-footer {
     flex-direction: column !important;
     align-items: flex-start !important;
+    gap: 0.3rem !important;
+    font-size: 0.7rem !important;
+    width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Maç Satırları (Listelerde tek satır, taşma engeli) */
+  .match-row {
+    display: grid !important;
+    grid-template-columns: 48px minmax(0, 1fr) auto minmax(0, 1fr) !important;
     gap: 0.35rem !important;
-    font-size: 0.72rem !important;
+    padding: 0.55rem 0.45rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .match-arrow {
+    display: none !important;
+  }
+  .match-meta {
+    font-size: 0.65rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+  .match-round-badge {
+    display: none !important;
+  }
+  .match-team {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    gap: 0.3rem !important;
+  }
+  .match-team span {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 0.75rem !important;
+  }
+  .match-team img {
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0 !important;
+  }
+  .match-score-box {
+    font-size: 0.8rem !important;
+    padding: 0.2rem 0.45rem !important;
+    flex-shrink: 0 !important;
   }
 }
 
@@ -7023,6 +7161,8 @@ body {
   -webkit-overflow-scrolling: touch !important;
   scrollbar-width: none !important;
   padding: 0.25rem 0 0.5rem 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 .cal-month-strip::-webkit-scrollbar {
   display: none !important;
@@ -7033,12 +7173,17 @@ body {
 }
 
 @media (max-width: 640px) {
+  .calendar-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
   .calendar-card .card-header,
   .calendar-header {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 0.65rem !important;
-    padding: 0.85rem 0.75rem !important;
+    gap: 0.55rem !important;
+    padding: 0.65rem 0.6rem !important;
   }
   .calendar-nav-controls,
   .calendar-nav {
@@ -7046,6 +7191,9 @@ body {
     justify-content: space-between !important;
     align-items: center !important;
     width: 100% !important;
+  }
+  .calendar-current-month {
+    font-size: 0.95rem !important;
   }
   #fixtureViewModeGroup {
     display: flex !important;
@@ -7057,57 +7205,142 @@ body {
   }
   .calendar-weekdays {
     display: grid !important;
-    grid-template-columns: repeat(7, 1fr) !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 0 !important;
   }
   .calendar-weekdays div {
-    font-size: 0.65rem !important;
-    padding: 0.3rem 0.1rem !important;
+    font-size: 0.62rem !important;
+    padding: 0.25rem 0 !important;
     text-align: center !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    min-width: 0 !important;
+  }
+  .calendar-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 1px !important;
   }
   .cal-day {
-    min-height: 54px !important;
-    padding: 0.2rem !important;
+    min-height: 48px !important;
+    padding: 0.15rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
   }
-  .cal-match-pill {
-    padding: 0.25rem 0.35rem !important;
-    font-size: 0.7rem !important;
+  .cal-day-num {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 0.68rem !important;
+    line-height: 18px !important;
+  }
+  .cal-match-pill,
+  .cal-match-card {
+    padding: 0.15rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+  .cal-match-top,
+  .cal-match-opp-name {
+    display: none !important;
+  }
+  .cal-match-opp img {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .cal-match-bottom {
+    font-size: 0.62rem !important;
+  }
+  .calendar-legend {
+    display: none !important;
   }
 }
 
-/* 4. ÖNCEKİ MAÇ DETAYLARI (Geçmiş Maçlar Kartları ve 28 İstatistik Modalı) */
+/* 4. ÖNCEKİ MAÇ DETAYLARI (Geçmiş Maçlar Kartları ve Raporlar) */
 @media (max-width: 768px) {
   .past-details-grid {
     grid-template-columns: 1fr !important;
-    gap: 0.75rem !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
   }
-  .past-card {
-    padding: 0.85rem 0.75rem !important;
+  .past-card,
+  .past-detail-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    padding: 0.65rem 0.55rem !important;
+  }
+  .past-card-head {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.45rem 0.55rem !important;
+    font-size: 0.7rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .past-card-score-row {
-    padding: 0.65rem 0.5rem !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
     gap: 0.35rem !important;
+    padding: 0.5rem 0.35rem !important;
+    align-items: center !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .past-card-team {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    gap: 0.3rem !important;
   }
   .past-card-team img {
-    width: 32px !important;
-    height: 32px !important;
+    width: 28px !important;
+    height: 28px !important;
+    flex-shrink: 0 !important;
   }
   .past-card-team-name {
-    font-size: 0.82rem !important;
+    font-size: 0.78rem !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .past-card-formation {
+    font-size: 0.62rem !important;
   }
   .past-card-score-box {
-    font-size: 1.25rem !important;
-    padding: 0.2rem 0.65rem !important;
+    font-size: 1.15rem !important;
+    padding: 0.15rem 0.5rem !important;
+    flex-shrink: 0 !important;
   }
   .past-card-events {
-    grid-template-columns: 1fr !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
     gap: 0.35rem !important;
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.75rem !important;
+    padding: 0.45rem 0.55rem !important;
+    font-size: 0.7rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .past-events-col {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
   }
   .past-card-stats-grid {
     grid-template-columns: 1fr !important;
-    gap: 0.5rem !important;
-    padding: 0.65rem 0.75rem !important;
+    gap: 0.4rem !important;
+    padding: 0.55rem 0.6rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .past-stat-bar-track {
     height: 6px !important;
@@ -7122,40 +7355,52 @@ body {
     max-height: 92vh !important;
     margin: 0.75rem auto !important;
     border-radius: var(--radius-lg) !important;
+    box-sizing: border-box !important;
   }
   .modal-scoreboard-grid,
   .modal-scoreboard {
     gap: 0.45rem !important;
     padding: 0.85rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .modal-team-crest,
   .modal-team img {
-    width: 38px !important;
-    height: 38px !important;
+    width: 36px !important;
+    height: 36px !important;
   }
   .modal-team-name {
-    font-size: 0.82rem !important;
+    font-size: 0.8rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
   .modal-score-center .modal-score-num,
   .modal-score-big {
-    font-size: 1.65rem !important;
-    padding: 0.2rem 0.85rem !important;
+    font-size: 1.55rem !important;
+    padding: 0.2rem 0.75rem !important;
   }
   .modal-body {
-    padding: 0.85rem !important;
+    padding: 0.75rem !important;
+    overflow-x: hidden !important;
   }
   .stats-category-grid {
     grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
   }
 }
 
 /* 5. PUAN DURUMU (Modern Responsive Tablo) */
 .table-wrap {
   width: 100% !important;
+  max-width: 100% !important;
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch !important;
   scrollbar-width: thin !important;
   border-radius: var(--radius-md) !important;
+  box-sizing: border-box !important;
 }
 
 @media (max-width: 560px) {
@@ -7173,27 +7418,27 @@ body {
   }
   .standings-table th,
   .standings-table td {
-    padding: 0.55rem 0.35rem !important;
-    font-size: 0.8rem !important;
+    padding: 0.45rem 0.25rem !important;
+    font-size: 0.75rem !important;
   }
   .standings-table .team-cell span {
-    max-width: 130px !important;
+    max-width: 95px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
   }
   .standings-table .team-cell img {
-    width: 20px !important;
-    height: 20px !important;
+    width: 18px !important;
+    height: 18px !important;
   }
   .col-pos .pos-badge {
-    width: 22px !important;
-    height: 22px !important;
-    font-size: 0.72rem !important;
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.68rem !important;
   }
   .pts-cell {
-    font-size: 0.92rem !important;
+    font-size: 0.88rem !important;
     font-weight: 900 !important;
   }
 }
@@ -7207,6 +7452,7 @@ body {
   scrollbar-width: none !important;
   gap: 0.35rem !important;
   padding-bottom: 0.25rem !important;
+  max-width: 100% !important;
 }
 .filter-group::-webkit-scrollbar {
   display: none !important;
@@ -7220,23 +7466,36 @@ body {
   .squad-controls {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 0.65rem !important;
-  }
-  .squad-search-wrap {
+    gap: 0.5rem !important;
     width: 100% !important;
   }
-  .squad-search-wrap input {
+  .squad-search-wrap,
+  .search-wrap {
     width: 100% !important;
+    max-width: 100% !important;
+  }
+  .squad-search-wrap input,
+  .search-wrap input {
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .squad-grid {
     grid-template-columns: 1fr !important;
-    gap: 0.65rem !important;
+    gap: 0.55rem !important;
+    width: 100% !important;
   }
   .player-card {
-    padding: 0.85rem !important;
+    padding: 0.75rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
   .player-metrics {
-    gap: 0.4rem !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 }
 
@@ -7245,37 +7504,24 @@ body {
   #tab-superlig .card-header {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 0.75rem !important;
+    gap: 0.55rem !important;
+    padding: 0.65rem 0.6rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
-  .match-row {
-    grid-template-columns: 56px 1fr auto 1fr !important;
-    gap: 0.45rem !important;
-    padding: 0.75rem 0.65rem !important;
+  #tab-superlig .card-header > div:last-child {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+    align-items: center !important;
   }
-  .match-meta {
-    font-size: 0.68rem !important;
-  }
-  .match-round-badge {
-    font-size: 0.62rem !important;
-  }
-  .match-team span {
-    font-size: 0.78rem !important;
-    max-width: 100px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-  .match-team img {
-    width: 22px !important;
-    height: 22px !important;
-  }
-  .match-score-box {
-    padding: 0.25rem 0.5rem !important;
-    font-size: 0.85rem !important;
+  .round-select {
+    flex: 1 !important;
+    max-width: none !important;
   }
 }
 
-/* 8. GÖNDERİLER (280 Karakter & Twitter Tarzı Akış) */
+/* 8. GÖNDERİLER (280 Karakter & Bütünleşik Kesintisiz Twitter Akışı) */
 .tw-char-counter {
   font-family: var(--font-mono);
   font-size: 0.78rem;
@@ -7287,13 +7533,15 @@ body {
 .tw-quick-tags-row {
   display: flex !important;
   align-items: center !important;
-  gap: 0.4rem !important;
+  gap: 0.35rem !important;
   overflow-x: auto !important;
   flex-wrap: nowrap !important;
   -webkit-overflow-scrolling: touch !important;
   scrollbar-width: none !important;
-  margin: 0.5rem 0 0.4rem !important;
+  margin: 0.4rem 0 !important;
   padding: 0.1rem 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 .tw-quick-tags-row::-webkit-scrollbar {
   display: none !important;
@@ -7304,34 +7552,71 @@ body {
 }
 
 @media (max-width: 640px) {
-  .tw-tweets-stream {
-    gap: 0.25rem !important;
-  }
   .tw-composer {
-    padding: 0.75rem !important;
+    padding: 0.65rem 0.75rem !important;
+    margin-bottom: 0.5rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .tw-composer-row {
-    gap: 0.5rem !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
-  .tweet-card {
-    padding: 0.65rem 0.75rem !important;
+  .tw-composer-main {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .tw-composer-bar {
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .tw-tweets-stream {
+    gap: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .tweet-card,
+  article.tweet-card {
+    padding: 0.55rem 0.75rem !important;
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    border-radius: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .tweet-layout {
-    gap: 0.55rem !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .tweet-avatar-col img {
+    width: 36px !important;
+    height: 36px !important;
   }
   .tweet-body-col {
-    gap: 0.25rem !important;
+    gap: 0.15rem !important;
+    min-width: 0 !important;
+    width: 100% !important;
   }
   .tweet-text {
     font-size: 0.88rem !important;
     line-height: 1.4 !important;
+    margin: 0.12rem 0 !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
   }
   .tweet-actions-bar {
-    gap: 0.45rem !important;
-    margin-top: 0.25rem !important;
+    gap: 0.4rem !important;
+    margin-top: 0.2rem !important;
   }
   .tw-btn {
-    padding: 0.25rem 0.45rem !important;
+    padding: 0.2rem 0.4rem !important;
     font-size: 0.75rem !important;
   }
 }
@@ -7340,49 +7625,61 @@ body {
 @media (max-width: 640px) {
   .profile-page-hero {
     border-radius: var(--radius-md) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
   .pph-banner-bg {
-    height: 90px !important;
+    height: 85px !important;
   }
   .pph-hero-content {
     flex-direction: column !important;
     align-items: center !important;
     text-align: center !important;
-    padding: 0 1rem 1rem !important;
-    margin-top: -42px !important;
+    padding: 0 0.75rem 0.75rem !important;
+    margin-top: -36px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .pph-avatar-box {
-    margin-bottom: 0.5rem !important;
+    margin-bottom: 0.4rem !important;
+    width: 68px !important;
+    height: 68px !important;
   }
   .pph-name-row {
     justify-content: center !important;
+    width: 100% !important;
   }
   .pph-name {
-    font-size: 1.25rem !important;
+    font-size: 1.15rem !important;
   }
   .pph-meta-tags {
     justify-content: center !important;
     flex-wrap: wrap !important;
-    gap: 0.4rem !important;
-    font-size: 0.76rem !important;
+    gap: 0.35rem !important;
+    font-size: 0.72rem !important;
   }
   .pph-actions-col {
-    margin: 0.75rem auto 0 auto !important;
+    margin: 0.65rem auto 0 auto !important;
   }
   .pph-stats-strip {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 0.35rem !important;
-    padding: 0.75rem 0.5rem !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.25rem !important;
+    padding: 0.6rem 0.4rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .pph-stat-box {
-    padding: 0.35rem 0.2rem !important;
+    padding: 0.3rem 0.15rem !important;
+    min-width: 0 !important;
   }
   .pph-stat-value {
-    font-size: 1.15rem !important;
+    font-size: 1.05rem !important;
   }
   .pph-stat-lbl {
-    font-size: 0.68rem !important;
+    font-size: 0.65rem !important;
   }
 }
 

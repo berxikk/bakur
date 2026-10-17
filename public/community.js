@@ -2442,7 +2442,7 @@ function renderListShell() {
 
 function renderOfficialPost(p) {
   return `
-    <article class="tweet-card card official-club-card" id="official-${esc(p.id)}">
+    <article class="tweet-card official-club-card" id="official-${esc(p.id)}">
       <div class="tweet-layout">
         <div class="tweet-avatar-col">
           <img class="c-avatar" style="width:44px;height:44px" src="${esc(p.author.avatar)}" alt="${esc(p.author.name)}" />
@@ -2493,7 +2493,7 @@ function renderUserTweet(t) {
   const excerpt = t.body;
 
   return `
-    <article class="tweet-card card ${t.is_pinned ? 'is-pinned' : ''}" id="thread-${t.id}">
+    <article class="tweet-card ${t.is_pinned ? 'is-pinned' : ''}" id="thread-${t.id}">
       <div class="tweet-layout">
         <div class="tweet-avatar-col" data-action="view-user-profile" data-user-id="${t.author_id || ''}" style="cursor:pointer;" title="Profili Gör">
           ${avatarHTML(author, 44)}
