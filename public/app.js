@@ -50,17 +50,23 @@ if (appState.data?.rounds?.currentRound) {
 /* =========================================================
    4 DİLLİ TAM ÇEVİRİ SÖZLÜĞÜ (TR, KU, EN, DE)
    ========================================================= */
-// Çok dilli sözlük public/i18n.js dosyasından yüklenir
-const I18N = (typeof window !== "undefined" && window.I18N) ? window.I18N : {};
+// Çok dilli sözlük public/i18n.js dosyasından dinamik olarak alınır
+function getI18NDict() {
+  const root = (typeof window !== 'undefined' && window.I18N) ? window.I18N : (typeof I18N !== 'undefined' ? I18N : {});
+  return (root && root[appState?.lang]) || (root && root.tr) || {};
+}
 
 function t(key) {
-  const dict = I18N[appState.lang] || I18N.tr;
-  return dict[key] !== undefined ? dict[key] : I18N.tr[key] || key;
+  const dict = getI18NDict();
+  if (dict && dict[key] !== undefined) return dict[key];
+  const trDict = (typeof window !== 'undefined' && window.I18N && window.I18N.tr) ? window.I18N.tr : {};
+  return trDict[key] !== undefined ? trDict[key] : key;
 }
 
 function getStatLabel(statName, fallbackLabel) {
-  const dict = I18N[appState.lang] || I18N.tr;
-  return dict.statsMap?.[statName] || I18N.tr.statsMap?.[statName] || fallbackLabel || statName;
+  const dict = getI18NDict();
+  const trDict = (typeof window !== 'undefined' && window.I18N && window.I18N.tr) ? window.I18N.tr : {};
+  return dict?.statsMap?.[statName] || trDict?.statsMap?.[statName] || fallbackLabel || statName;
 }
 
 function getPosLabel(posCode) {

@@ -6,7 +6,7 @@
  * Konum: public/i18n.js
  */
 
-export const I18N = {
+const I18N = {
   "tr": {
     "locale": "tr-TR",
     "superLig": "Süper Lig",
@@ -989,7 +989,7 @@ export const I18N = {
   }
 };
 
-export const CI18N = {
+const CI18N = {
   "tr": {
     "navForum": "Forum",
     "login": "Giriş Yap",
@@ -1719,7 +1719,7 @@ export const CI18N = {
 /**
  * Universal key lookup across both app & community dictionaries
  */
-export function getTranslation(key, currentLang) {
+function getTranslation(key, currentLang) {
   const l = currentLang || (typeof localStorage !== 'undefined' ? localStorage.getItem('amed_lang') : 'tr') || 'tr';
   return (
     I18N[l]?.[key] ??
@@ -1733,7 +1733,7 @@ export function getTranslation(key, currentLang) {
 /**
  * Automatically scans and translates every element in the DOM
  */
-export function translateDocument(targetLang) {
+function translateDocument(targetLang) {
   const l = targetLang || (typeof localStorage !== 'undefined' ? localStorage.getItem('amed_lang') : 'tr') || 'tr';
   document.documentElement.lang = l;
 
@@ -1769,5 +1769,9 @@ if (typeof window !== 'undefined') {
   window.getTranslation = getTranslation;
   window.translateDocument = translateDocument;
 }
-
-export default { I18N, CI18N, getTranslation, translateDocument };
+if (typeof globalThis !== 'undefined') {
+  globalThis.I18N = I18N;
+  globalThis.CI18N = CI18N;
+  globalThis.getTranslation = getTranslation;
+  globalThis.translateDocument = translateDocument;
+}

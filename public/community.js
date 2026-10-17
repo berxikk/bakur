@@ -10,13 +10,13 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 /* ---------- ÇEVİRİLER ---------- */
 // Çok dilli sözlük public/i18n.js dosyasından yüklenir
-import { CI18N } from "./i18n.js";
+const CI18N = (typeof window !== 'undefined' && window.CI18N) ? window.CI18N : {};
 
 const lang = () => {
-  const l = localStorage.getItem('amed_lang') || document.documentElement.lang || 'tr';
-  return CI18N[l] ? l : 'tr';
+  const l = (typeof localStorage !== 'undefined' ? localStorage.getItem('amed_lang') : null) || document.documentElement.lang || 'tr';
+  return (CI18N && CI18N[l]) ? l : 'tr';
 };
-const T = (key) => CI18N[lang()][key] ?? CI18N.tr[key] ?? key;
+const T = (key) => (CI18N && CI18N[lang()] && CI18N[lang()][key]) ?? (CI18N && CI18N.tr && CI18N.tr[key]) ?? key;
 
 /* ---------- DURUM ---------- */
 const S = {
