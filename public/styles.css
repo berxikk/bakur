@@ -3438,6 +3438,18 @@ body {
   font-size: 0.82rem;
   color: var(--text-secondary);
 }
+
+#authHcaptcha {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0.75rem 0;
+  min-height: 78px;
+  overflow: hidden;
+}
+#authHcaptcha iframe {
+  max-width: 100% !important;
+}
 .c-form-actions {
   display: flex;
   align-items: center;

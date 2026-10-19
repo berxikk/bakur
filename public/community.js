@@ -125,13 +125,17 @@ const sanitizeBannerUrl = sanitizeImageUrl;
 function avatarHTML(profile, size = 36) {
   const name = profile?.display_name || profile?.username || '?';
   const cleanUrl = sanitizeAvatarUrl(profile?.avatar_url);
-  if (cleanUrl) {
-    return `<img class="c-avatar" style="width:${size}px;height:${size}px" src="${esc(cleanUrl)}" alt="${esc(name)}" referrerpolicy="no-referrer" />`;
-  }
   const palette = ['#059669', '#e11d48', '#0f766e', '#b45309', '#4f46e5', '#0e7490'];
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return `<span class="c-avatar" style="width:${size}px;height:${size}px;background:${palette[h % palette.length]};font-size:${Math.round(size * 0.42)}px">${esc(name.charAt(0).toUpperCase())}</span>`;
+  const initial = esc(name.charAt(0).toUpperCase() || '?');
+  const bg = palette[h % palette.length];
+  const fs = Math.round(size * 0.42);
+
+  if (cleanUrl) {
+    return `<img class="c-avatar" style="width:${size}px;height:${size}px;object-fit:cover;" src="${esc(cleanUrl)}" alt="${esc(name)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.outerHTML='<span class=\\'c-avatar\\' style=\\'width:${size}px;height:${size}px;background:${bg};font-size:${fs}px\\'>${initial}</span>';" />`;
+  }
+  return `<span class="c-avatar" style="width:${size}px;height:${size}px;background:${bg};font-size:${fs}px">${initial}</span>`;
 }
 
 function catName(cat) {
@@ -274,7 +278,66 @@ function openDialog(html, cls = '') {
   return wrap;
 }
 
+const HCAPTCHA_SITEKEY = 'a57cfb98-c022-4708-b5c0-d3a80af8657c';
+let authCaptchaWidgetId = null;
+
+function renderAuthCaptcha(containerId = 'authHcaptcha') {
+  authCaptchaWidgetId = null;
+  const container = $(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+
+  const doRender = () => {
+    if (!window.hcaptcha || typeof window.hcaptcha.render !== 'function') return;
+    try {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-theme');
+      authCaptchaWidgetId = window.hcaptcha.render(containerId, {
+        sitekey: HCAPTCHA_SITEKEY,
+        theme: isDark ? 'dark' : 'light',
+        size: 'normal'
+      });
+    } catch (e) {
+      console.warn('hCaptcha render hatası:', e);
+    }
+  };
+
+  if (window.hcaptcha && typeof window.hcaptcha.render === 'function') {
+    doRender();
+  } else {
+    let tries = 0;
+    const interval = setInterval(() => {
+      tries++;
+      if (window.hcaptcha && typeof window.hcaptcha.render === 'function') {
+        clearInterval(interval);
+        doRender();
+      } else if (tries > 30) {
+        clearInterval(interval);
+      }
+    }, 120);
+  }
+}
+
+function getAuthCaptchaToken() {
+  if (window.hcaptcha && authCaptchaWidgetId !== null) {
+    try {
+      return window.hcaptcha.getResponse(authCaptchaWidgetId) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}
+
+function resetAuthCaptcha() {
+  if (window.hcaptcha && authCaptchaWidgetId !== null) {
+    try {
+      window.hcaptcha.reset(authCaptchaWidgetId);
+    } catch (e) {}
+  }
+}
+
 function closeDialog() {
+  authCaptchaWidgetId = null;
   $('cDialog')?.remove();
 }
 
@@ -313,6 +376,7 @@ function openAuth(mode = 'login') {
         <label class="c-field"><span>${T('emailOrUsername')}</span><input type="text" name="email" autocomplete="username" placeholder="${T('emailOrUsername')}" required /></label>
         <label class="c-field"><span>${T('password')}</span><input type="password" name="password" autocomplete="current-password" required /></label>
         <div class="c-row-end"><button type="button" class="c-link" data-action="auth-mode" data-mode="reset">${T('forgot')}</button></div>
+        <div id="authHcaptcha" style="display:flex; justify-content:center; margin:0.75rem 0; min-height:78px;"></div>
         <div class="c-form-msg"></div>
         <button type="submit" class="c-btn c-btn-primary">${T('login')}</button>
       </form>
@@ -335,6 +399,7 @@ function openAuth(mode = 'login') {
         <div style="font-size:0.76rem; color:var(--text-secondary); margin-top:-0.4rem; margin-bottom:0.75rem; line-height:1.35;">
           Kayıt olabilmek için bu alana <strong>"her bijî amedspor"</strong> yazmalısınız.
         </div>
+        <div id="authHcaptcha" style="display:flex; justify-content:center; margin:0.75rem 0; min-height:78px;"></div>
         <div class="c-form-msg"></div>
         <button type="submit" class="c-btn c-btn-primary">${T('signup')}</button>
       </form>
@@ -345,6 +410,7 @@ function openAuth(mode = 'login') {
       <p class="c-dialog-sub">${T('resetSub')}</p>
       <form class="c-form" data-form="reset" novalidate>
         <label class="c-field"><span>${T('email')}</span><input type="email" name="email" autocomplete="email" required /></label>
+        <div id="authHcaptcha" style="display:flex; justify-content:center; margin:0.75rem 0; min-height:78px;"></div>
         <div class="c-form-msg"></div>
         <button type="submit" class="c-btn c-btn-primary">${T('sendReset')}</button>
       </form>
@@ -359,6 +425,9 @@ function openAuth(mode = 'login') {
       </form>`;
   }
   openDialog(html, 'c-dialog-auth');
+  if (['signup', 'login', 'reset'].includes(mode)) {
+    setTimeout(() => renderAuthCaptcha('authHcaptcha'), 60);
+  }
 }
 
 async function handleAuthForm(form) {
@@ -366,6 +435,7 @@ async function handleAuthForm(form) {
   const fd = new FormData(form);
   const email = String(fd.get('email') || '').trim();
   const password = String(fd.get('password') || '');
+  const captchaToken = getAuthCaptchaToken();
   const redirectTo = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
     ? window.location.origin
     : 'https://bakur.onread.com';
@@ -380,8 +450,17 @@ async function handleAuthForm(form) {
         setBusy(form, false);
         return formMsg(form, 'Hesap güvenliği ve gizlilik için lütfen kayıtlı e-posta adresinizi giriniz.');
       }
-      const { data: authData, error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
-      if (error) throw error;
+      const { data: authData, error } = await sb.auth.signInWithPassword({
+        email: loginEmail,
+        password,
+        options: {
+          ...(captchaToken ? { captchaToken } : {})
+        }
+      });
+      if (error) {
+        resetAuthCaptcha();
+        throw error;
+      }
       if (authData?.session) {
         S.session = authData.session;
       }
@@ -411,6 +490,11 @@ async function handleAuthForm(form) {
         return formMsg(form, 'Kayıt olabilmek için lütfen doğrulama kutusuna "her bijî amedspor" yazınız! 💚❤️');
       }
 
+      if (!captchaToken && window.hcaptcha) {
+        setBusy(form, false);
+        return formMsg(form, T('captchaRequired'));
+      }
+
       const username = String(fd.get('username') || '').trim();
       if (!/^[A-Za-z0-9_.]{3,24}$/.test(username)) {
         setBusy(form, false);
@@ -424,9 +508,16 @@ async function handleAuthForm(form) {
       const { data, error } = await sb.auth.signUp({
         email,
         password,
-        options: { data: { username, display_name: username }, emailRedirectTo: redirectTo }
+        options: {
+          data: { username, display_name: username },
+          emailRedirectTo: redirectTo,
+          ...(captchaToken ? { captchaToken } : {})
+        }
       });
-      if (error) throw error;
+      if (error) {
+        resetAuthCaptcha();
+        throw error;
+      }
       if (!data.session) {
         formMsg(form, T('checkEmail'), 'ok');
         setBusy(form, false);
@@ -440,8 +531,14 @@ async function handleAuthForm(form) {
         setBusy(form, false);
         return formMsg(form, 'Lütfen şifre sıfırlama bağlantısının gönderileceği e-posta adresinizi giriniz.');
       }
-      const { error } = await sb.auth.resetPasswordForEmail(resetEmail, { redirectTo });
-      if (error) throw error;
+      const { error } = await sb.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo,
+        ...(captchaToken ? { captchaToken } : {})
+      });
+      if (error) {
+        resetAuthCaptcha();
+        throw error;
+      }
       formMsg(form, T('resetSent'), 'ok');
     } else if (kind === 'update') {
       const { error } = await sb.auth.updateUser({ password });
@@ -450,6 +547,7 @@ async function handleAuthForm(form) {
       toast(T('passwordUpdated'));
     }
   } catch (error) {
+    resetAuthCaptcha();
     formMsg(form, errMsg(error));
   }
   setBusy(form, false);

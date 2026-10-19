@@ -1415,7 +1415,8 @@ const CI18N = {
     "imageMax8MB": "Görsel boyutu en fazla 8MB olabilir.",
     "tagCharLimitErr": "Hashtag eklendiğinde 280 karakter sınırı aşılacağı için eklenemedi.",
     "filteredByTag": "etiketine göre filtrelendi.",
-    "defaultPostTitle": "Amedspor Taraftar Paylaşımı"
+    "defaultPostTitle": "Amedspor Taraftar Paylaşımı",
+    "captchaRequired": "Lütfen robot olmadığınızı doğrulamak için güvenlik testini (hCaptcha) tamamlayınız."
   },
   "ku": {
     "navForum": "Forum",
@@ -1646,7 +1647,8 @@ const CI18N = {
     "imageMax8MB": "Mezinahiya wêneyê divê herî zêde 8MB be.",
     "tagCharLimitErr": "Etîket ji ber derbaskirina sînorê 280 tîpan nehate zêdekirin.",
     "filteredByTag": "li gorî etîketê hate fîltre kirin.",
-    "defaultPostTitle": "Parvekirina Alîgirê Amedsporê"
+    "defaultPostTitle": "Parvekirina Alîgirê Amedsporê",
+    "captchaRequired": "Ji kerema xwe ji bo pejirandina ku hûn ne robot in testa ewlehiyê (hCaptcha) temam bikin."
   },
   "en": {
     "navForum": "Forum",
@@ -1877,7 +1879,8 @@ const CI18N = {
     "imageMax8MB": "Image size can be at most 8MB.",
     "tagCharLimitErr": "Hashtag could not be added because it exceeds the 280-character limit.",
     "filteredByTag": "filtered by tag.",
-    "defaultPostTitle": "Amedspor Fan Post"
+    "defaultPostTitle": "Amedspor Fan Post",
+    "captchaRequired": "Please complete the security check (hCaptcha) to verify you are not a robot."
   },
   "de": {
     "navForum": "Forum",
@@ -2108,7 +2111,8 @@ const CI18N = {
     "imageMax8MB": "Bildgröße darf maximal 8MB betragen.",
     "tagCharLimitErr": "Hashtag konnte nicht hinzugefügt werden, da das Limit von 280 Zeichen überschritten wird.",
     "filteredByTag": "nach Tag gefiltert.",
-    "defaultPostTitle": "Amedspor Fan-Beitrag"
+    "defaultPostTitle": "Amedspor Fan-Beitrag",
+    "captchaRequired": "Bitte schließen Sie die Sicherheitsüberprüfung (hCaptcha) ab, um zu bestätigen, dass Sie kein Roboter sind."
   }
 };
 
