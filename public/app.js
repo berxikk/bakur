@@ -303,7 +303,8 @@ function getDashboardFingerprint(d) {
     `${m.id}:${m.homeScore?.current}:${m.awayScore?.current}`
   ).join('|');
   const upMatchesStr = (d.upcomingMatches || []).slice(0, 2).map(m => m.id).join('|');
-  const standingsTopStr = (d.standings || []).slice(0, 5).map(s => `${s.team?.id}:${s.points}`).join('|');
+  const standingsRows = Array.isArray(d.standings) ? d.standings : (d.standings?.total || []);
+  const standingsTopStr = standingsRows.slice(0, 5).map(s => `${s.team?.id}:${s.points}`).join('|');
   return `${d.timestamp || ''}_${currentMatchesStr}_${pastMatchesStr}_${upMatchesStr}_${standingsTopStr}`;
 }
 

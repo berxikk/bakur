@@ -389,6 +389,7 @@ function closeDialog() {
 window.renderAuthCaptcha = renderAuthCaptcha;
 window.getAuthCaptchaToken = getAuthCaptchaToken;
 window.resetAuthCaptcha = resetAuthCaptcha;
+window.openAuth = openAuth;
 
 function setBusy(form, busy) {
   form.querySelectorAll('button, input, textarea, select').forEach((el) => (el.disabled = busy));
@@ -422,7 +423,7 @@ function openAuth(mode = 'login') {
       <p class="c-dialog-sub">${T('loginSub')}</p>
       ${google}
       <form class="c-form" data-form="login" novalidate>
-        <label class="c-field"><span>${T('emailOrUsername')}</span><input type="text" name="email" autocomplete="username" placeholder="${T('emailOrUsername')}" required /></label>
+        <label class="c-field"><span>${T('email')}</span><input type="email" name="email" autocomplete="email" placeholder="ornek@email.com" required /></label>
         <label class="c-field"><span>${T('password')}</span><input type="password" name="password" autocomplete="current-password" required /></label>
         <div class="c-row-end"><button type="button" class="c-link" data-action="auth-mode" data-mode="reset">${T('forgot')}</button></div>
         <div id="authHcaptcha" style="display:flex; justify-content:center; margin:0.75rem 0; min-height:78px;"></div>
