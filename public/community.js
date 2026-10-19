@@ -380,9 +380,22 @@ async function handleAuthForm(form) {
         setBusy(form, false);
         return formMsg(form, 'Hesap güvenliği ve gizlilik için lütfen kayıtlı e-posta adresinizi giriniz.');
       }
-      const { error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
+      const { data: authData, error } = await sb.auth.signInWithPassword({ email: loginEmail, password });
       if (error) throw error;
+      if (authData?.session) {
+        S.session = authData.session;
+      }
       closeDialog();
+      await loadProfile();
+      await loadMyFollows();
+      loadSuggestedUsers();
+      renderHeaderAuth();
+      if (S.view === 'list') {
+        renderForum();
+      } else if (S.view === 'thread') {
+        renderComposer();
+      }
+      refreshForum(true);
     } else if (kind === 'signup') {
       const pledge = String(fd.get('amedPledge') || '').trim().toLowerCase();
       const validPledges = [
@@ -2753,7 +2766,7 @@ async function loadNewPendingPosts() {
 }
 
 async function checkNewIncomingThreads() {
-  if (S.view !== 'list' || !S.threads || !S.threads.length) return;
+  if (document.hidden || S.view !== 'list' || !S.threads || !S.threads.length) return;
   try {
     const { data, error } = await sb
       .from('forum_threads')
@@ -3060,6 +3073,15 @@ async function init() {
   const prevSwitchTab = window.switchTab;
   window.switchTab = function (tabId) {
     if (typeof prevSwitchTab === 'function') prevSwitchTab(tabId);
+    if (tabId === 'community' || tabId === 'forum') {
+      if (S.view === 'list') {
+        const hasGuestCard = document.querySelector('.tw-guest-card');
+        const hasComposer = document.querySelector('.tw-composer');
+        if ((me() && hasGuestCard) || (!me() && hasComposer)) {
+          renderForum();
+        }
+      }
+    }
     if (tabId === 'profile') renderProfilePage();
     if (tabId === 'settings') renderSettingsPage();
   };
@@ -3070,6 +3092,17 @@ async function init() {
       openProfile();
     });
   }
+
+  // Supabase oturumunu ilk anda bellekten/depolamadan anında al
+  try {
+    const { data: sessionData } = await sb.auth.getSession();
+    if (sessionData?.session) {
+      S.session = sessionData.session;
+      await loadProfile();
+      await loadMyFollows();
+      renderHeaderAuth();
+    }
+  } catch (e) {}
 
   sb.auth.onAuthStateChange((event, session) => {
     S.session = session;
@@ -3097,11 +3130,14 @@ async function init() {
         toast(`${T('welcome')}, ${S.profile.display_name || S.profile.username}!`);
       }
       if (event === 'SIGNED_OUT') sessionStorage.removeItem('amed_welcomed');
-      if (['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event)) {
+      if (['INITIAL_SESSION', 'SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED', 'TOKEN_REFRESHED'].includes(event)) {
         if (S.view === 'thread') {
           renderComposer();
           refreshForum(true);
-        } else refreshForum(true);
+        } else {
+          renderForum();
+          refreshForum(true);
+        }
       }
     }, 0);
   });

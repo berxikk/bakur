@@ -294,46 +294,108 @@ function getTeamLogo(teamId) {
   return `/logos/${teamId || AMED_ID}.png`;
 }
 
+function getDashboardFingerprint(d) {
+  if (!d) return '';
+  const currentMatchesStr = (d.currentRoundMatches || []).map(m =>
+    `${m.id}:${m.status?.clock}:${m.status?.type}:${m.homeScore?.current}:${m.awayScore?.current}`
+  ).join('|');
+  const pastMatchesStr = (d.pastMatches || []).slice(0, 3).map(m =>
+    `${m.id}:${m.homeScore?.current}:${m.awayScore?.current}`
+  ).join('|');
+  const upMatchesStr = (d.upcomingMatches || []).slice(0, 2).map(m => m.id).join('|');
+  const standingsTopStr = (d.standings || []).slice(0, 5).map(s => `${s.team?.id}:${s.points}`).join('|');
+  return `${d.timestamp || ''}_${currentMatchesStr}_${pastMatchesStr}_${upMatchesStr}_${standingsTopStr}`;
+}
+
+let dashboardPollTimeout = null;
+
+function scheduleNextPoll(data) {
+  if (dashboardPollTimeout) {
+    clearTimeout(dashboardPollTimeout);
+    dashboardPollTimeout = null;
+  }
+
+  // Sekme arka plandaysa CPU ve ağ tasarrufu için 60 saniyeye yavaşlat
+  if (document.hidden) {
+    dashboardPollTimeout = setTimeout(fetchDashboard, 60000);
+    return;
+  }
+
+  const d = data || appState.data;
+  const hasLiveMatch = (d?.currentRoundMatches || []).some(m => m.status?.type === 'inprogress')
+    || (d?.pastMatches || []).some(m => m.status?.type === 'inprogress')
+    || (d?.upcomingMatches || []).some(m => m.status?.type === 'inprogress');
+
+  // Canlı maç varsa 5 saniyede bir, canlı maç yoksa 20 saniyede bir sorgula
+  const nextDelay = hasLiveMatch ? 5000 : 20000;
+  dashboardPollTimeout = setTimeout(fetchDashboard, nextDelay);
+}
+
+async function fetchSquad(force = false) {
+  const now = Date.now();
+  if (!force && appState.players && appState.players.length > 0 && (now - (appState.lastSquadFetchTime || 0) < 3 * 60 * 1000)) {
+    return;
+  }
+  try {
+    const squadRes = await fetch(`/api/squad?_t=${now}`, { cache: 'no-store' });
+    if (squadRes.ok) {
+      const sqData = await squadRes.json();
+      if (Array.isArray(sqData.players) && sqData.players.length > 0) {
+        appState.players = sqData.players;
+        appState.lastSquadFetchTime = now;
+        try {
+          localStorage.setItem('amed_cached_squad', JSON.stringify(appState.players));
+        } catch (e) {}
+        renderSquad();
+      }
+    }
+  } catch (err) {
+    console.warn('Squad fetch warning:', err.message);
+  }
+}
+
 async function fetchDashboard() {
   try {
     const ts = Date.now();
-    const [dashRes, squadRes] = await Promise.all([
-      fetch(`/api/dashboard?_t=${ts}`, { cache: 'no-store' }),
-      fetch(`/api/squad?_t=${ts}`, { cache: 'no-store' })
-    ]);
-
+    const dashRes = await fetch(`/api/dashboard?_t=${ts}`, { cache: 'no-store' });
     if (!dashRes.ok) throw new Error(`HTTP ${dashRes.status}`);
     const data = await dashRes.json();
+
+    const newHash = getDashboardFingerprint(data);
+    const dataChanged = newHash !== appState.lastRenderedDataHash;
+
     appState.data = data;
     try {
       localStorage.setItem('amed_cached_dashboard', JSON.stringify(data));
     } catch (e) {}
 
-    if (squadRes && squadRes.ok) {
-      const sqData = await squadRes.json();
-      appState.players = sqData.players || [];
-      try {
-        localStorage.setItem('amed_cached_squad', JSON.stringify(appState.players));
-      } catch (e) {}
-    }
-
     if (!appState.selectedRound) {
       appState.selectedRound = data.rounds?.currentRound || 8;
     }
 
-    renderAll();
+    // Yalnızca veri gerçekten değiştiğinde renderAll() çağır! (DOM Thrashing & Stutter Kesin Çözümü)
+    if (dataChanged) {
+      appState.lastRenderedDataHash = newHash;
+      renderAll();
+    }
 
     const modalEl = document.getElementById('matchModal');
     if (modalEl?.classList.contains('open') && appState.activeModalEventId) {
-      const mRes = await fetch(`/api/match/${appState.activeModalEventId}?_t=${Date.now()}`, { cache: 'no-store' });
-      if (mRes.ok) {
-        appState.activeModalData = await mRes.json();
-        renderModalHeader();
-        renderModalBody();
+      const isLive = appState.activeModalData?.event?.status?.type === 'inprogress';
+      if (isLive || !appState.activeModalData) {
+        const mRes = await fetch(`/api/match/${appState.activeModalEventId}?_t=${Date.now()}`, { cache: 'no-store' });
+        if (mRes.ok) {
+          appState.activeModalData = await mRes.json();
+          renderModalHeader();
+          renderModalBody();
+        }
       }
     }
+
+    scheduleNextPoll(data);
   } catch (err) {
     console.error('Arka plan senkronizasyon hatası:', err);
+    scheduleNextPoll(appState.data);
   }
 }
 
@@ -2472,18 +2534,28 @@ function initApp() {
   // Kayıtlı dili uygula ve veriler varsa ANINDA senkron render et (0ms Bekleme)
   setLanguage(appState.lang);
   if (appState.data) {
+    appState.lastRenderedDataHash = getDashboardFingerprint(appState.data);
     renderAll();
   }
 
-  // Canlı ve Anlık Veri: Arka planda yüksek hızlı senkronizasyon (2.5 saniyede bir)
+  // Akıllı ve Adaptif Arka Plan Senkronizasyonu (DOM Thrashing & Donma Engeli)
   fetchDashboard();
-  setInterval(fetchDashboard, 2500);
+  fetchSquad();
+  setInterval(() => fetchSquad(), 3 * 60 * 1000);
+
   document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      fetchDashboard();
+      fetchSquad();
+    } else {
+      scheduleNextPoll(appState.data);
+    }
+  });
+  window.addEventListener('focus', () => {
     if (document.visibilityState === 'visible') {
       fetchDashboard();
     }
   });
-  window.addEventListener('focus', fetchDashboard);
 }
 
 if (document.readyState === 'loading') {

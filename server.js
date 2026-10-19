@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const zlib = require('zlib');
 
 const PORT = process.env.PORT || 3021;
 const AMED_ESPN_ID = '132335';
@@ -223,7 +224,7 @@ function normalizeNameForCompare(s) {
 
 async function getLiveSquadStats(pastMatches = []) {
   const now = Date.now();
-  if (liveSquadStatsCache.timestamp && (now - liveSquadStatsCache.timestamp < 5000)) {
+  if (liveSquadStatsCache.timestamp && (now - liveSquadStatsCache.timestamp < 10 * 60 * 1000)) {
     return liveSquadStatsCache.data;
   }
 
@@ -489,7 +490,7 @@ async function fetchJson(url, ttlMs = 12000) {
     return cached.data;
   }
   try {
-    const res = await fetch(url, { headers: HEADERS });
+    const res = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(5000) });
     if (!res.ok) return cached ? cached.data : null;
     const data = await res.json();
     cache.set(url, { data, timestamp: now });
@@ -583,8 +584,11 @@ async function fetchWeekMatches(weekObj, ttlMs = 12000) {
   return allEvents;
 }
 
-function sendJson(res, data, status = 200, extraHeaders = {}) {
-  res.writeHead(status, {
+function sendJson(res, data, status = 200, extraHeaders = {}, req = null) {
+  const request = req || res.req;
+  const acceptEncoding = (request && request.headers && request.headers['accept-encoding']) || '';
+  const jsonStr = typeof data === 'string' ? data : JSON.stringify(data);
+  const headers = {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
     'Pragma': 'no-cache',
@@ -595,8 +599,18 @@ function sendJson(res, data, status = 200, extraHeaders = {}) {
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     ...SECURITY_HEADERS,
     ...extraHeaders
-  });
-  res.end(JSON.stringify(data));
+  };
+
+  if (acceptEncoding.includes('gzip') && jsonStr.length > 512) {
+    const compressed = zlib.gzipSync(Buffer.from(jsonStr));
+    headers['Content-Encoding'] = 'gzip';
+    headers['Content-Length'] = compressed.length;
+    res.writeHead(status, headers);
+    return res.end(compressed);
+  }
+
+  res.writeHead(status, headers);
+  res.end(jsonStr);
 }
 
 // İstatistikleri Türkçeleştirme, Kategori ve Yüzde Formatlama Yardımcıları
@@ -1158,8 +1172,13 @@ function generateRichMatchCommentary(eventInfo, rawCommentary, keyEvents, statis
   return commItems;
 }
 
+const enrichedFinishedMatchesCache = new Map();
+
 async function enrichFinishedMatch(matchObj) {
-  const summary = await fetchJson(`${ESPN_SITE_BASE}/summary?event=${matchObj.id}`, 10000);
+  if (matchObj && matchObj.id && enrichedFinishedMatchesCache.has(matchObj.id)) {
+    return enrichedFinishedMatchesCache.get(matchObj.id);
+  }
+  const summary = await fetchJson(`${ESPN_SITE_BASE}/summary?event=${matchObj.id}`, 60000);
   if (!summary) return matchObj;
 
   const boxTeams = summary.boxscore?.teams || [];
@@ -1227,6 +1246,10 @@ async function enrichFinishedMatch(matchObj) {
       dangerousAttacks: [String(intel.attacks.dangerous.home), String(intel.attacks.dangerous.away)]
     }
   };
+  if (matchObj && matchObj.id) {
+    enrichedFinishedMatchesCache.set(matchObj.id, enriched);
+  }
+  return enriched;
 }
 
 function parseJsonBody(req, maxBytes = 100 * 1024) {
@@ -1324,7 +1347,7 @@ async function getDashboardData(forceRefresh = false) {
   const hasLiveMatch = (cachedDashboard?.currentRoundMatches || []).some(m => m.status?.type === 'inprogress')
     || (cachedDashboard?.pastMatches || []).some(m => m.status?.type === 'inprogress')
     || (cachedDashboard?.upcomingMatches || []).some(m => m.status?.type === 'inprogress');
-  const dashTtl = hasLiveMatch ? 2000 : 3500;
+  const dashTtl = hasLiveMatch ? 4000 : 25000;
   if (!forceRefresh && cachedDashboard && (now - lastDashboardFetch < dashTtl)) {
     return cachedDashboard;
   }
@@ -1520,13 +1543,16 @@ async function getDashboardData(forceRefresh = false) {
     }
   })();
 
-  if (cachedDashboard) return cachedDashboard;
-  return updatingDashboardPromise;
+  const promise = updatingDashboardPromise;
+  if (cachedDashboard && !forceRefresh) {
+    return cachedDashboard;
+  }
+  return promise;
 }
 
 async function getSquadData(forceRefresh = false) {
   const now = Date.now();
-  if (!forceRefresh && cachedSquad && (now - lastSquadFetch < 5000)) {
+  if (!forceRefresh && cachedSquad && (now - lastSquadFetch < 5 * 60 * 1000)) {
     return cachedSquad;
   }
   if (updatingSquadPromise) {
@@ -1619,6 +1645,7 @@ setInterval(() => getSquadData(true), 120000).unref();
 setInterval(getLiveClubFeed, 600000).unref();
 
 const server = http.createServer(async (req, res) => {
+  res.req = req;
   // 1. CORS Preflight (OPTIONS) Yanıtı
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -2206,7 +2233,6 @@ async function uploadToExternalImageHost(buffer, ext) {
 
   // Ana sayfa için Eş Zamanlı Veri Enjeksiyonu (SSR Hydration Bootstrap - 0ms Gecikme)
   if (safePathname === '/' || safePathname === '/index.html') {
-    await getDashboardData().catch(() => {});
     fs.readFile(fullPath, 'utf8', (err, htmlContent) => {
       if (err) {
         res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8', ...SECURITY_HEADERS });
@@ -2219,13 +2245,22 @@ async function uploadToExternalImageHost(buffer, ext) {
     window.__INITIAL_CLUB_FEED__ = ${safeJsonSerialize(liveClubFeedCache?.data || null)};
   </script>`;
       const outputHtml = htmlContent.replace('</head>', `${injectionScript}\n</head>`);
-      res.writeHead(200, {
+      const acceptEncoding = (req.headers['accept-encoding'] || '');
+      const headers = {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-store, no-cache, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
         ...SECURITY_HEADERS
-      });
+      };
+      if (acceptEncoding.includes('gzip')) {
+        const compressed = zlib.gzipSync(Buffer.from(outputHtml));
+        headers['Content-Encoding'] = 'gzip';
+        headers['Content-Length'] = compressed.length;
+        res.writeHead(200, headers);
+        return res.end(compressed);
+      }
+      res.writeHead(200, headers);
       return res.end(outputHtml);
     });
     return;
@@ -2237,13 +2272,24 @@ async function uploadToExternalImageHost(buffer, ext) {
       return res.end('404 Not Found');
     }
     const isImage = ['.png', '.jpg', '.jpeg', '.webp', '.gif'].includes(extname);
-    res.writeHead(200, {
+    const isCode = ['.js', '.css'].includes(extname);
+    const acceptEncoding = (req.headers['accept-encoding'] || '');
+
+    const headers = {
       'Content-Type': mimeTypes[extname] || (pathname.includes('/models/') ? 'application/octet-stream' : 'text/plain'),
-      'Cache-Control': isImage ? 'public, max-age=86400' : 'no-store, no-cache, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0',
+      'Cache-Control': isImage ? 'public, max-age=86400' : isCode ? 'public, max-age=3600, stale-while-revalidate=86400' : 'no-store, no-cache, must-revalidate',
       ...SECURITY_HEADERS
-    });
+    };
+
+    if (isCode && acceptEncoding.includes('gzip') && content.length > 512) {
+      const compressed = zlib.gzipSync(content);
+      headers['Content-Encoding'] = 'gzip';
+      headers['Content-Length'] = compressed.length;
+      res.writeHead(200, headers);
+      return res.end(compressed);
+    }
+
+    res.writeHead(200, headers);
     res.end(content);
   });
 });
