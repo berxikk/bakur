@@ -1416,7 +1416,9 @@ const CI18N = {
     "tagCharLimitErr": "Hashtag eklendiğinde 280 karakter sınırı aşılacağı için eklenemedi.",
     "filteredByTag": "etiketine göre filtrelendi.",
     "defaultPostTitle": "Amedspor Taraftar Paylaşımı",
-    "captchaRequired": "Lütfen robot olmadığınızı doğrulamak için güvenlik testini (hCaptcha) tamamlayınız."
+    "captchaRequired": "Lütfen robot olmadığınızı doğrulamak için güvenlik testini (hCaptcha) tamamlayınız.",
+    "captchaLoading": "Güvenlik doğrulaması yükleniyor...",
+    "captchaBlocked": "Güvenlik testi (hCaptcha) yüklenemedi. Tarayıcınızda reklam engelleyici (AdBlock / Brave Kalkanı) varsa bu site için devre dışı bırakınız."
   },
   "ku": {
     "navForum": "Forum",
@@ -1648,7 +1650,9 @@ const CI18N = {
     "tagCharLimitErr": "Etîket ji ber derbaskirina sînorê 280 tîpan nehate zêdekirin.",
     "filteredByTag": "li gorî etîketê hate fîltre kirin.",
     "defaultPostTitle": "Parvekirina Alîgirê Amedsporê",
-    "captchaRequired": "Ji kerema xwe ji bo pejirandina ku hûn ne robot in testa ewlehiyê (hCaptcha) temam bikin."
+    "captchaRequired": "Ji kerema xwe ji bo pejirandina ku hûn ne robot in testa ewlehiyê (hCaptcha) temam bikin.",
+    "captchaLoading": "Testa ewlehiyê tê barkirin...",
+    "captchaBlocked": "Testa ewlehiyê (hCaptcha) nehate barkirin. Heke astengkerê reklaman (AdBlock) hebe, ji kerema xwe vemirînin."
   },
   "en": {
     "navForum": "Forum",
@@ -1880,7 +1884,9 @@ const CI18N = {
     "tagCharLimitErr": "Hashtag could not be added because it exceeds the 280-character limit.",
     "filteredByTag": "filtered by tag.",
     "defaultPostTitle": "Amedspor Fan Post",
-    "captchaRequired": "Please complete the security check (hCaptcha) to verify you are not a robot."
+    "captchaRequired": "Please complete the security check (hCaptcha) to verify you are not a robot.",
+    "captchaLoading": "Loading security check...",
+    "captchaBlocked": "Security check (hCaptcha) failed to load. Please disable your ad blocker (AdBlock / Brave Shields) for this site."
   },
   "de": {
     "navForum": "Forum",
@@ -2112,7 +2118,9 @@ const CI18N = {
     "tagCharLimitErr": "Hashtag konnte nicht hinzugefügt werden, da das Limit von 280 Zeichen überschritten wird.",
     "filteredByTag": "nach Tag gefiltert.",
     "defaultPostTitle": "Amedspor Fan-Beitrag",
-    "captchaRequired": "Bitte schließen Sie die Sicherheitsüberprüfung (hCaptcha) ab, um zu bestätigen, dass Sie kein Roboter sind."
+    "captchaRequired": "Bitte schließen Sie die Sicherheitsüberprüfung (hCaptcha) ab, um zu bestätigen, dass Sie kein Roboter sind.",
+    "captchaLoading": "Sicherheitsüberprüfung wird geladen...",
+    "captchaBlocked": "Sicherheitsüberprüfung (hCaptcha) konnte nicht geladen werden. Bitte deaktivieren Sie den Werbeblocker für diese Seite."
   }
 };
 

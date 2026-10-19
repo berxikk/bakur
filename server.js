@@ -2277,7 +2277,7 @@ async function uploadToExternalImageHost(buffer, ext) {
 
     const headers = {
       'Content-Type': mimeTypes[extname] || (pathname.includes('/models/') ? 'application/octet-stream' : 'text/plain'),
-      'Cache-Control': isImage ? 'public, max-age=86400' : isCode ? 'public, max-age=3600, stale-while-revalidate=86400' : 'no-store, no-cache, must-revalidate',
+      'Cache-Control': isImage ? 'public, max-age=86400' : isCode ? 'no-cache, must-revalidate' : 'no-store, no-cache, must-revalidate',
       ...SECURITY_HEADERS
     };
 

@@ -283,16 +283,25 @@ const HCAPTCHA_SITEKEY = 'a57cfb98-c022-4708-b5c0-d3a80af8657c';
 let authCaptchaWidgetId = null;
 
 function renderAuthCaptcha(containerId = 'authHcaptcha') {
-  authCaptchaWidgetId = null;
   const container = $(containerId);
   if (!container) return;
-  container.innerHTML = '';
+
+  // Placeholder showing that security check is loading
+  container.innerHTML = `
+    <div class="hcaptcha-loading-placeholder" style="display:flex; align-items:center; justify-content:center; gap:8px; color:var(--text-secondary); font-size:0.82rem; padding:12px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08); width:100%; min-height:78px; box-sizing:border-box;">
+      <i class="ri-loader-4-line ri-spin" style="font-size:1.15rem; color:var(--amed-green);"></i>
+      <span>${T('captchaLoading') || 'Güvenlik doğrulaması yükleniyor...'}</span>
+    </div>
+  `;
 
   const doRender = () => {
-    if (!window.hcaptcha || typeof window.hcaptcha.render !== 'function') return;
+    if (!window.hcaptcha || typeof window.hcaptcha.render !== 'function') return false;
+    const currentContainer = $(containerId);
+    if (!currentContainer) return false;
     try {
+      currentContainer.innerHTML = '';
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-theme');
-      authCaptchaWidgetId = window.hcaptcha.render(containerId, {
+      authCaptchaWidgetId = window.hcaptcha.render(currentContainer, {
         sitekey: HCAPTCHA_SITEKEY,
         theme: isDark ? 'dark' : 'light',
         size: 'normal',
@@ -303,10 +312,16 @@ function renderAuthCaptcha(containerId = 'authHcaptcha') {
             msgEl.textContent = '';
             msgEl.style.display = 'none';
           }
+        },
+        'expired-callback': () => {},
+        'error-callback': (err) => {
+          console.warn('hCaptcha error:', err);
         }
       });
+      return true;
     } catch (e) {
       console.warn('hCaptcha render hatası:', e);
+      return false;
     }
   };
 
@@ -319,10 +334,24 @@ function renderAuthCaptcha(containerId = 'authHcaptcha') {
       if (window.hcaptcha && typeof window.hcaptcha.render === 'function') {
         clearInterval(interval);
         doRender();
-      } else if (tries > 30) {
+      } else if (tries > 35) {
         clearInterval(interval);
+        const currentContainer = $(containerId);
+        if (currentContainer && (!window.hcaptcha || typeof window.hcaptcha.render !== 'function')) {
+          currentContainer.innerHTML = `
+            <div style="border:1px dashed rgba(227,6,19,0.5); background:rgba(227,6,19,0.08); border-radius:8px; padding:10px 14px; text-align:center; font-size:0.8rem; color:var(--text-primary); line-height:1.4; width:100%; box-sizing:border-box;">
+              <div style="display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:4px; font-weight:700; color:#e30613;">
+                <i class="ri-shield-cross-line" style="font-size:1.1rem;"></i>
+                <span>hCaptcha Yüklenemedi</span>
+              </div>
+              <div style="color:var(--text-secondary); font-size:0.77rem;">
+                ${T('captchaBlocked') || 'Güvenlik testi (hCaptcha) yüklenemedi. Lütfen reklam engelleyicinizi (AdBlock / Brave Kalkanı) bu site için devre dışı bırakıp sayfayı yenileyiniz.'}
+              </div>
+            </div>
+          `;
+        }
       }
-    }, 120);
+    }, 100);
   }
 }
 
@@ -356,6 +385,10 @@ function closeDialog() {
   authCaptchaWidgetId = null;
   $('cDialog')?.remove();
 }
+
+window.renderAuthCaptcha = renderAuthCaptcha;
+window.getAuthCaptchaToken = getAuthCaptchaToken;
+window.resetAuthCaptcha = resetAuthCaptcha;
 
 function setBusy(form, busy) {
   form.querySelectorAll('button, input, textarea, select').forEach((el) => (el.disabled = busy));
