@@ -163,6 +163,7 @@ function toast(msg, type = 'ok') {
 
 function errMsg(error) {
   const m = (error?.message || '').toLowerCase();
+  if (m.includes('captcha')) return T('captchaRequired');
   if (m.includes('invalid login')) return T('invalidCredentials');
   if (m.includes('email not confirmed')) return T('emailNotConfirmed');
   if (m.includes('password') && m.includes('6')) return T('minPassword');
@@ -294,7 +295,15 @@ function renderAuthCaptcha(containerId = 'authHcaptcha') {
       authCaptchaWidgetId = window.hcaptcha.render(containerId, {
         sitekey: HCAPTCHA_SITEKEY,
         theme: isDark ? 'dark' : 'light',
-        size: 'normal'
+        size: 'normal',
+        callback: () => {
+          const msgEl = document.querySelector('.c-dialog-auth .c-form-msg');
+          if (msgEl) {
+            msgEl.className = 'c-form-msg';
+            msgEl.textContent = '';
+            msgEl.style.display = 'none';
+          }
+        }
       });
     } catch (e) {
       console.warn('hCaptcha render hatası:', e);
@@ -318,13 +327,20 @@ function renderAuthCaptcha(containerId = 'authHcaptcha') {
 }
 
 function getAuthCaptchaToken() {
-  if (window.hcaptcha && authCaptchaWidgetId !== null) {
-    try {
-      return window.hcaptcha.getResponse(authCaptchaWidgetId) || null;
-    } catch (e) {
-      return null;
+  if (window.hcaptcha) {
+    if (authCaptchaWidgetId !== null) {
+      try {
+        const resp = window.hcaptcha.getResponse(authCaptchaWidgetId);
+        if (resp) return resp;
+      } catch (e) {}
     }
+    try {
+      const resp = window.hcaptcha.getResponse();
+      if (resp) return resp;
+    } catch (e) {}
   }
+  const el = document.querySelector('[name="h-captcha-response"]') || document.querySelector('[name="g-recaptcha-response"]');
+  if (el && el.value) return el.value;
   return null;
 }
 
@@ -450,11 +466,15 @@ async function handleAuthForm(form) {
         setBusy(form, false);
         return formMsg(form, 'Hesap güvenliği ve gizlilik için lütfen kayıtlı e-posta adresinizi giriniz.');
       }
+      if (!captchaToken && $('authHcaptcha')) {
+        setBusy(form, false);
+        return formMsg(form, T('captchaRequired'));
+      }
       const { data: authData, error } = await sb.auth.signInWithPassword({
         email: loginEmail,
         password,
         options: {
-          ...(captchaToken ? { captchaToken } : {})
+          captchaToken
         }
       });
       if (error) {
@@ -490,7 +510,7 @@ async function handleAuthForm(form) {
         return formMsg(form, 'Kayıt olabilmek için lütfen doğrulama kutusuna "her bijî amedspor" yazınız! 💚❤️');
       }
 
-      if (!captchaToken && window.hcaptcha) {
+      if (!captchaToken && $('authHcaptcha')) {
         setBusy(form, false);
         return formMsg(form, T('captchaRequired'));
       }
@@ -511,7 +531,7 @@ async function handleAuthForm(form) {
         options: {
           data: { username, display_name: username },
           emailRedirectTo: redirectTo,
-          ...(captchaToken ? { captchaToken } : {})
+          captchaToken
         }
       });
       if (error) {
@@ -531,9 +551,13 @@ async function handleAuthForm(form) {
         setBusy(form, false);
         return formMsg(form, 'Lütfen şifre sıfırlama bağlantısının gönderileceği e-posta adresinizi giriniz.');
       }
+      if (!captchaToken && $('authHcaptcha')) {
+        setBusy(form, false);
+        return formMsg(form, T('captchaRequired'));
+      }
       const { error } = await sb.auth.resetPasswordForEmail(resetEmail, {
         redirectTo,
-        ...(captchaToken ? { captchaToken } : {})
+        captchaToken
       });
       if (error) {
         resetAuthCaptcha();
