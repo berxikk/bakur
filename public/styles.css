@@ -9651,3 +9651,755 @@ article.tweet-card.is-pinned {
   align-items: center;
   justify-content: center;
 }
+
+/* ==========================================================================
+   PROFESYONEL KADRO SAYFASI (KPI STRIP, SPOTLIGHT, MEVKİ RENKLERİ, TABLO)
+   ========================================================================== */
+.squad-kpi-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.squad-kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.95rem;
+  box-shadow: var(--shadow-xs);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.squad-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--amed-green-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.squad-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.squad-kpi-icon.val {
+  background: var(--amed-green-soft);
+  color: var(--amed-green);
+  border: 1px solid var(--amed-green-border);
+}
+
+.squad-kpi-icon.count {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.squad-kpi-icon.age {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.squad-kpi-icon.mvp {
+  background: var(--amed-red-soft);
+  color: var(--amed-red);
+  border: 1px solid var(--amed-red-border);
+}
+
+.squad-kpi-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.squad-kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.squad-kpi-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.squad-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 0.1rem;
+}
+
+/* Kadro Spotlight Şeridi */
+.squad-spotlight-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.squad-spotlight-card {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-subtle) 100%);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 0.95rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+}
+
+.squad-spotlight-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.squad-spotlight-card.scorer::before { background: #e11d48; }
+.squad-spotlight-card.assist::before { background: #10b981; }
+.squad-spotlight-card.mvp::before { background: #f59e0b; }
+
+.spotlight-badge-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.spotlight-badge-icon.scorer { background: rgba(225, 29, 72, 0.12); color: #e11d48; }
+.spotlight-badge-icon.assist { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+.spotlight-badge-icon.mvp { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+
+.spotlight-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.spotlight-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+}
+
+.spotlight-player {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0.1rem 0;
+}
+
+.spotlight-stat {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--amed-green);
+}
+
+/* Kadro Kontrolleri Sağ Taraf (Arama + Görünüm Seçici) */
+.squad-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.squad-search-box {
+  flex: 1;
+  max-width: 300px;
+}
+
+.squad-view-switch {
+  display: flex;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.squad-view-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.squad-view-btn:hover {
+  color: var(--text-main);
+}
+
+.squad-view-btn.active {
+  background: var(--bg-card);
+  color: var(--amed-green);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Mevki Bazlı Renk Etiketleri */
+.pos-tag.pos-g {
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.pos-tag.pos-d {
+  background: rgba(2, 132, 199, 0.14);
+  color: #0284c7;
+  border: 1px solid rgba(2, 132, 199, 0.3);
+}
+
+.pos-tag.pos-m {
+  background: rgba(16, 185, 129, 0.14);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pos-tag.pos-f {
+  background: rgba(225, 29, 72, 0.14);
+  color: #e11d48;
+  border: 1px solid rgba(225, 29, 72, 0.3);
+}
+
+/* Forma Numarası Rozeti */
+.player-shirt-circle.g {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.08) 100%);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #d97706;
+}
+
+.player-shirt-circle.d {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.2) 0%, rgba(2, 132, 199, 0.08) 100%);
+  border-color: rgba(2, 132, 199, 0.4);
+  color: #0284c7;
+}
+
+.player-shirt-circle.m {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #059669;
+}
+
+.player-shirt-circle.f {
+  background: linear-gradient(135deg, rgba(225, 29, 72, 0.2) 0%, rgba(225, 29, 72, 0.08) 100%);
+  border-color: rgba(225, 29, 72, 0.4);
+  color: #e11d48;
+}
+
+/* Detaylı Kadro Tablosu (Transfermarkt Stili) */
+.squad-table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  box-shadow: var(--shadow-xs);
+}
+
+.squad-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.squad-table th {
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+
+.squad-table td {
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.squad-table tr:last-child td {
+  border-bottom: none;
+}
+
+.squad-table tr:hover td {
+  background: var(--bg-subtle);
+}
+
+.squad-table-player {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.squad-table-num {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  color: var(--text-muted);
+  width: 22px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   TAKTIKSEL FUTBOL SAHASI (MATCH DETAILS - LINEUP ON PITCH)
+   ========================================================================== */
+.lineup-mode-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.lineup-tabs-left,
+.lineup-tabs-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-card);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+.lineup-tab-btn,
+.pitch-team-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.38rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.lineup-tab-btn:hover,
+.pitch-team-btn:hover {
+  color: var(--text-main);
+}
+
+.lineup-tab-btn.active,
+.pitch-team-btn.active {
+  background: var(--amed-green);
+  color: #fff;
+}
+
+.pitch-team-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pitch-team-dot.home { background: #10b981; }
+.pitch-team-dot.away { background: #e11d48; }
+
+/* Saha Kapsayıcısı */
+.tactical-pitch-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto 1.5rem auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  user-select: none;
+}
+
+/* Çim ve Zemin */
+.tactical-pitch {
+  position: relative;
+  width: 100%;
+  height: 680px;
+  background: #154726;
+  background-image: repeating-linear-gradient(
+    180deg,
+    #18522c 0px,
+    #18522c 42px,
+    #144725 42px,
+    #144725 84px
+  );
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Saha Çizgileri Katmanı */
+.pitch-lines-layer {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+/* Orta Çizgi */
+.pitch-half-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.7);
+  transform: translateY(-50%);
+}
+
+/* Santra Yuvarlağı */
+.pitch-center-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.pitch-center-spot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Ceza Sahaları */
+.pitch-penalty-box {
+  position: absolute;
+  left: 50%;
+  width: 52%;
+  height: 16%;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  transform: translateX(-50%);
+}
+
+.pitch-penalty-box.top {
+  top: 0;
+  border-top: none;
+}
+
+.pitch-penalty-box.bottom {
+  bottom: 0;
+  border-bottom: none;
+}
+
+/* Altıpas (Kale Alanı) */
+.pitch-goal-area {
+  position: absolute;
+  left: 50%;
+  width: 24%;
+  height: 6.5%;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  transform: translateX(-50%);
+}
+
+.pitch-goal-area.top {
+  top: 0;
+  border-top: none;
+}
+
+.pitch-goal-area.bottom {
+  bottom: 0;
+  border-bottom: none;
+}
+
+/* Penaltı Noktaları */
+.pitch-penalty-spot {
+  position: absolute;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.pitch-penalty-spot.top { top: 11.5%; }
+.pitch-penalty-spot.bottom { bottom: 11.5%; }
+
+/* Ceza Sahası Yayları */
+.pitch-penalty-arc {
+  position: absolute;
+  left: 50%;
+  width: 64px;
+  height: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  transform: translateX(-50%);
+}
+
+.pitch-penalty-arc.top {
+  top: 16%;
+  border-top: none;
+  border-radius: 0 0 64px 64px;
+}
+
+.pitch-penalty-arc.bottom {
+  bottom: 16%;
+  border-bottom: none;
+  border-radius: 64px 64px 0 0;
+}
+
+/* Köşe Gönderi Yayları */
+.pitch-corner-arc {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+}
+
+.pitch-corner-arc.tl { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: 0 0 16px 0; }
+.pitch-corner-arc.tr { top: 0; right: 0; border-left: none; border-bottom: none; border-radius: 0 0 0 16px; }
+.pitch-corner-arc.bl { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 16px 0 0; }
+.pitch-corner-arc.br { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 16px 0 0 0; }
+
+/* Taktiksel Maç ve Diziliş Bannerı (Saha Dışında, Üstte - Kaleci Kutularına Binmez) */
+.pitch-match-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.15rem;
+  margin-bottom: 0.85rem;
+  box-shadow: var(--shadow-xs);
+  gap: 0.75rem;
+}
+
+.pitch-match-banner.single {
+  justify-content: center;
+}
+
+.pitch-banner-team {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.pitch-banner-team.away {
+  justify-content: flex-start;
+}
+
+.pitch-banner-team.home {
+  justify-content: flex-end;
+}
+
+.pbt-team-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pbt-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.pbt-formation {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  color: var(--amed-green);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+}
+
+.pbt-vs-badge {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+/* Oyuncu Pini */
+.pitch-player-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+  cursor: pointer;
+  transition: transform 0.18s ease, z-index 0.18s ease;
+}
+
+.pitch-player-pin:hover {
+  transform: translate(-50%, -52%) scale(1.1);
+  z-index: 20;
+}
+
+/* Forma Rozeti */
+.pitch-shirt {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 900;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.pitch-shirt.home {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
+  border: 2px solid #34d399;
+}
+
+.pitch-shirt.home.gk {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #111827;
+  border: 2px solid #fde68a;
+}
+
+.pitch-shirt.away {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  color: #ffffff;
+  border: 2px solid #fda4af;
+}
+
+.pitch-shirt.away.gk {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: 2px solid #93c5fd;
+}
+
+/* Oyuncu Adı */
+.pitch-name {
+  margin-top: 3px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  letter-spacing: 0.2px;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Oyuncu Puan Rozeti */
+.pitch-rating-tag {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  padding: 1px 4px;
+  border-radius: 6px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+.pitch-rating-tag.high { background: #10b981; color: #ffffff; }
+.pitch-rating-tag.med { background: #f59e0b; color: #111827; }
+.pitch-rating-tag.low { background: #64748b; color: #ffffff; }
+
+/* Maç İçi Olay İkonları */
+.pitch-events-strip {
+  position: absolute;
+  top: -4px;
+  left: -8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  z-index: 2;
+}
+
+.pitch-event-icon {
+  font-size: 0.72rem;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+}
+
+@media (max-width: 768px) {
+  .squad-kpi-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+  }
+  .squad-spotlight-strip {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+  .tactical-pitch {
+    height: 580px;
+  }
+  .pitch-shirt {
+    width: 30px;
+    height: 30px;
+    font-size: 0.74rem;
+  }
+  .pitch-name {
+    font-size: 0.62rem;
+    max-width: 75px;
+  }
+}
+

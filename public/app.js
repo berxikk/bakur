@@ -12,10 +12,13 @@ let appState = {
   calInitialized: false,
   posFilter: 'ALL',
   playerSearch: '',
+  squadViewMode: 'grid',
   selectedRound: null,
   activeModalEventId: null,
   activeModalData: null,
   activeModalTab: 'summary',
+  lineupViewMode: 'pitch',
+  pitchTeamMode: 'both',
   commActiveFilter: 'all',
   statsActiveFilter: 'all',
   modalLiveInterval: null,
@@ -151,6 +154,12 @@ function setLanguage(lang) {
     const key = el.getAttribute('data-i18n-ph') || el.getAttribute('data-ci18n-ph');
     const val = t(key);
     if (typeof val === 'string') el.placeholder = val;
+  });
+
+  document.querySelectorAll('[data-i18n-title], [data-ci18n-title]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-title') || el.getAttribute('data-ci18n-title');
+    const val = t(key);
+    if (typeof val === 'string') el.title = val;
   });
 
   // 4. Arama kutuları
@@ -1251,11 +1260,226 @@ function renderFullFixtures() {
   document.getElementById('fullFixturesList').innerHTML = list.map(createMatchRowHTML).join('');
 }
 
+// Taktiksel Saha Koordinat Hesaplama Motoru (Diziliş ve Mevki Duyarlı)
+function getTacticalStarterCoords(starters, formationStr, isTopHalf = false, isSingleTeam = false) {
+  let lineCounts = [4, 2, 3, 1];
+  if (formationStr && /^[0-9]+(-[0-9]+)+$/.test(String(formationStr).trim())) {
+    lineCounts = String(formationStr).trim().split('-').map(Number);
+  }
+
+  // 1. Kaleciyi Çek
+  const gk = starters.find((p) => {
+    const pos = (p.position || '').toUpperCase();
+    return pos === 'G' || pos === 'GK' || (p.positionName || '').toLowerCase().includes('goalkeeper');
+  }) || starters[0];
+
+  const outfield = starters.filter((p) => p !== gk);
+
+  // Derinlik puanı: 1 = DEF, 2 = DM/CM/Holding, 3 = AM/Kanat, 4 = Forvet
+  const getDepthScore = (p) => {
+    const pos = (p.position || '').toUpperCase();
+    if (['LB', 'LWB', 'DL', 'CB', 'CD', 'CD-L', 'CD-R', 'RB', 'RWB', 'DR', 'DC'].some((k) => pos.includes(k))) return 1;
+    if (['DM', 'CDM', 'DM-L', 'DM-R', 'CM-L', 'CM-R', 'CM', 'MC', 'LM', 'RM'].some((k) => pos.includes(k)) && !pos.startsWith('AM')) return 2;
+    if (['AM', 'AMC', 'AM-L', 'AM-R', 'LW', 'RW', 'CF-L', 'CF-R'].some((k) => pos.includes(k))) return 3;
+    if (['F', 'ST', 'CF', 'FW', 'LF', 'RF'].some((k) => pos.includes(k))) return 4;
+    return 2.5;
+  };
+
+  // Yatay kanat puanı: 1 (Sol) ile 5 (Sağ) arası
+  const getFlankScore = (p) => {
+    const pos = (p.position || '').toUpperCase();
+    if (['LB', 'LWB', 'DL', 'LM', 'LW', 'AM-L'].some((k) => pos.includes(k))) return 1;
+    if (['CD-L', 'CB-L', 'DC-L', 'DM-L', 'CM-L', 'CF-L'].some((k) => pos.includes(k))) return 2;
+    if (['CB', 'CD', 'DC', 'DM', 'CDM', 'CM', 'MC', 'AM', 'AMC', 'F', 'ST', 'CF'].some((k) => pos === k)) return 3;
+    if (['CD-R', 'CB-R', 'DC-R', 'DM-R', 'CM-R', 'CF-R'].some((k) => pos.includes(k))) return 4;
+    if (['RB', 'RWB', 'DR', 'RM', 'RW', 'AM-R'].some((k) => pos.includes(k))) return 5;
+    return 3;
+  };
+
+  const sortedOutfield = [...outfield].sort((a, b) => {
+    const dDiff = getDepthScore(a) - getDepthScore(b);
+    if (Math.abs(dDiff) > 0.1) return dDiff;
+    return getFlankScore(a) - getFlankScore(b);
+  });
+
+  const lines = [[gk]];
+  let cursor = 0;
+  lineCounts.forEach((count) => {
+    const linePlayers = sortedOutfield.slice(cursor, cursor + count);
+    linePlayers.sort((a, b) => getFlankScore(a) - getFlankScore(b));
+    lines.push(linePlayers);
+    cursor += count;
+  });
+
+  const numOutfieldLines = lines.length - 1;
+  const result = [];
+
+  // Kaleci Konumu
+  const gkY = isSingleTeam ? 93 : (isTopHalf ? 7 : 93);
+  result.push({ player: lines[0][0], x: 50, y: gkY });
+
+  // Hat Oyuncuları Konumu
+  for (let lIdx = 1; lIdx < lines.length; lIdx++) {
+    const linePlayers = lines[lIdx];
+    const n = linePlayers.length;
+    let yPct = 50;
+
+    if (isSingleTeam) {
+      const step = 78 / Math.max(1, numOutfieldLines);
+      yPct = Math.round(93 - (lIdx * step));
+    } else if (isTopHalf) {
+      // Deplasman (Üst Yarı): Defans %19'da, Forvet %46'da
+      const step = 27 / Math.max(1, numOutfieldLines - 1);
+      yPct = Math.round(19 + ((lIdx - 1) * step));
+    } else {
+      // Ev Sahibi (Alt Yarı): Defans %81'de, Forvet %54'te
+      const step = 27 / Math.max(1, numOutfieldLines - 1);
+      yPct = Math.round(81 - ((lIdx - 1) * step));
+    }
+
+    linePlayers.forEach((p, pIdx) => {
+      let xPct = 50;
+      if (n === 1) xPct = 50;
+      else if (n === 2) xPct = pIdx === 0 ? 35 : 65;
+      else if (n === 3) xPct = pIdx === 0 ? 22 : (pIdx === 1 ? 50 : 78);
+      else if (n === 4) xPct = pIdx === 0 ? 16 : (pIdx === 1 ? 38 : (pIdx === 2 ? 62 : 84));
+      else if (n === 5) xPct = pIdx === 0 ? 14 : (pIdx === 1 ? 32 : (pIdx === 2 ? 50 : (pIdx === 3 ? 68 : 86)));
+      else {
+        const margin = 14;
+        xPct = Math.round(margin + ((pIdx + 0.5) / n) * (100 - margin * 2));
+      }
+      result.push({ player: p, x: xPct, y: yPct });
+    });
+  }
+
+  return result;
+}
+
+// Saha Üzerindeki Oyuncu Pini
+function renderPitchPlayerPin(item, teamType, intel) {
+  const p = item.player;
+  const pos = (p.position || '').toUpperCase();
+  const isGk = pos === 'G' || pos === 'GK';
+  const name = p.shortName || p.name || 'Oyuncu';
+  const jersey = p.jersey || '—';
+  const isMotm = p.id && String(p.id) === String(intel?.motm?.id);
+  const ratingCls = (p.rating || 0) >= 7.6 ? 'high' : (p.rating || 0) >= 6.8 ? 'med' : 'low';
+
+  const ratingBadge = p.rating
+    ? `<span class="pitch-rating-tag ${ratingCls}">${isMotm ? '⭐ ' : ''}${p.rating}</span>`
+    : '';
+
+  const events = [];
+  (p.plays || []).forEach((pl) => {
+    if (pl.goal) events.push('<span class="pitch-event-icon" title="Gol">⚽</span>');
+    if (pl.yellow) events.push('<span class="pitch-event-icon" title="Sarı Kart">🟨</span>');
+    if (pl.red) events.push('<span class="pitch-event-icon" title="Kırmızı Kart">🟥</span>');
+    if (pl.sub) events.push('<span class="pitch-event-icon" title="Oyundan Çıktı">🔄</span>');
+  });
+
+  const eventHtml = events.length > 0
+    ? `<div class="pitch-events-strip">${events.join('')}</div>`
+    : '';
+
+  return `
+    <div class="pitch-player-pin" style="top:${item.y}%; left:${item.x}%;" title="${p.name} (#${jersey}) - ${p.position || ''}">
+      <div class="pitch-shirt ${teamType} ${isGk ? 'gk' : ''}">
+        ${jersey}
+        ${ratingBadge}
+        ${eventHtml}
+      </div>
+      <div class="pitch-name">${name}</div>
+    </div>
+  `;
+}
+
 function renderSquad() {
   const players = appState.players || [];
-  const { posFilter, playerSearch } = appState;
+  const { posFilter, playerSearch, squadViewMode } = appState;
   const q = playerSearch.trim().toLocaleLowerCase('tr-TR');
 
+  // 1. Kadro KPI Barını Render Et
+  const kpiEl = document.getElementById('squadKpiBar');
+  if (kpiEl && players.length > 0) {
+    const totalVal = players.reduce((s, p) => s + (Number(p.marketValue) || 0), 0);
+    const foreignCount = players.filter((p) => p.isForeign).length;
+    const localCount = players.length - foreignCount;
+    const validAges = players.map((p) => Number(p.age)).filter((n) => !isNaN(n) && n > 14 && n < 50);
+    const avgAge = validAges.length ? (validAges.reduce((s, a) => s + a, 0) / validAges.length).toFixed(1) : '—';
+    const mvpPlayer = [...players].sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0))[0];
+
+    kpiEl.innerHTML = `
+      <div class="squad-kpi-card">
+        <div class="squad-kpi-icon val"><i class="ri-money-euro-circle-line"></i></div>
+        <div class="squad-kpi-info">
+          <span class="squad-kpi-label">${t('squadKpiTotalVal')}</span>
+          <span class="squad-kpi-val" style="color:var(--amed-green);">${formatMarketValue(totalVal)}</span>
+          <span class="squad-kpi-sub">${t('squadKpiSubAmed')}</span>
+        </div>
+      </div>
+      <div class="squad-kpi-card">
+        <div class="squad-kpi-icon count"><i class="ri-team-line"></i></div>
+        <div class="squad-kpi-info">
+          <span class="squad-kpi-label">${t('squadKpiCount')}</span>
+          <span class="squad-kpi-val">${players.length} ${t('playerWord')}</span>
+          <span class="squad-kpi-sub">${localCount} ${t('localWord')} • ${foreignCount} ${t('foreignWord')}</span>
+        </div>
+      </div>
+      <div class="squad-kpi-card">
+        <div class="squad-kpi-icon age"><i class="ri-calendar-line"></i></div>
+        <div class="squad-kpi-info">
+          <span class="squad-kpi-label">${t('squadKpiAvgAge')}</span>
+          <span class="squad-kpi-val">${avgAge} ${t('ageWord')}</span>
+          <span class="squad-kpi-sub">${t('squadKpiSubDynamic')}</span>
+        </div>
+      </div>
+      <div class="squad-kpi-card">
+        <div class="squad-kpi-icon mvp"><i class="ri-vip-crown-line"></i></div>
+        <div class="squad-kpi-info">
+          <span class="squad-kpi-label">${t('squadKpiMvp')}</span>
+          <span class="squad-kpi-val">${mvpPlayer ? mvpPlayer.name : '—'}</span>
+          <span class="squad-kpi-sub" style="color:var(--amed-red); font-weight:700;">${mvpPlayer ? formatMarketValue(mvpPlayer.marketValue) : ''}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  // 2. Kadro Liderleri / Spotlight Şeridi
+  const spotEl = document.getElementById('squadSpotlightStrip');
+  if (spotEl && players.length > 0) {
+    const topScorer = [...players].filter((p) => (Number(p.goals) || 0) > 0).sort((a, b) => (b.goals || 0) - (a.goals || 0))[0];
+    const topAssist = [...players].filter((p) => (Number(p.assists) || 0) > 0).sort((a, b) => (b.assists || 0) - (a.assists || 0))[0];
+    const topVal = [...players].sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0))[0];
+
+    spotEl.innerHTML = `
+      <div class="squad-spotlight-card scorer">
+        <div class="spotlight-badge-icon scorer"><i class="ri-football-line"></i></div>
+        <div class="spotlight-meta">
+          <div class="spotlight-title">${t('squadSpotTopScorer')}</div>
+          <div class="spotlight-player">${topScorer ? `${topScorer.name} (#${topScorer.jerseyNumber || '—'})` : t('squadNoGoalsYet')}</div>
+          <div class="spotlight-stat">${topScorer ? `⚽ ${topScorer.goals} ${t('goalWord')}` : ''}</div>
+        </div>
+      </div>
+      <div class="squad-spotlight-card assist">
+        <div class="spotlight-badge-icon assist"><i class="ri-magic-line"></i></div>
+        <div class="spotlight-meta">
+          <div class="spotlight-title">${t('squadSpotTopAssist')}</div>
+          <div class="spotlight-player">${topAssist ? `${topAssist.name} (#${topAssist.jerseyNumber || '—'})` : t('squadNoAssistsYet')}</div>
+          <div class="spotlight-stat">${topAssist ? `🪄 ${topAssist.assists} ${t('assistWord')}` : ''}</div>
+        </div>
+      </div>
+      <div class="squad-spotlight-card mvp">
+        <div class="spotlight-badge-icon mvp"><i class="ri-gemini-line"></i></div>
+        <div class="spotlight-meta">
+          <div class="spotlight-title">${t('squadSpotMvp')}</div>
+          <div class="spotlight-player">${topVal ? `${topVal.name} (#${topVal.jerseyNumber || '—'})` : '—'}</div>
+          <div class="spotlight-stat">${topVal ? `💎 ${formatMarketValue(topVal.marketValue)}` : ''}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // 3. Filtreleme
   const filtered = players.filter((p) => {
     if (posFilter !== 'ALL' && p.position !== posFilter) return false;
     if (q) {
@@ -1266,80 +1490,150 @@ function renderSquad() {
     return true;
   });
 
-  const grid = document.getElementById('squadGrid');
-  grid.innerHTML = filtered
-    .map((p) => {
-      const posInfo = getPosLabel(p.position);
-      const countryName = trCountry(p);
+  const gridEl = document.getElementById('squadGrid');
+  const tableWrapEl = document.getElementById('squadTableWrap');
 
-      // Her oyuncunun uyruğu (Türk oyuncular dahil) bayrağı ve ülke ismi ile yer alır
-      let natHtml = '';
-      if (countryName || p.citizenship) {
-        const flagHtml = p.flagUrl
-          ? `<img class="flag-img" src="${p.flagUrl}" alt="${countryName || p.citizenship}" loading="lazy" />`
-          : '<i class="ri-earth-line"></i>';
-        natHtml = `
-          <span class="player-nat-pill" title="${countryName || p.citizenship}">
-            ${flagHtml} <span>${countryName || p.citizenship}</span>
-          </span>
-        `;
-      }
+  if (squadViewMode === 'table') {
+    if (gridEl) gridEl.style.display = 'none';
+    if (tableWrapEl) {
+      tableWrapEl.style.display = 'block';
+      tableWrapEl.innerHTML = `
+        <table class="squad-table">
+          <thead>
+            <tr>
+              <th style="width:36px; text-align:center;">#</th>
+              <th>${t('thPlayer')}</th>
+              <th>${t('thPosition')}</th>
+              <th>${t('thNationality')}</th>
+              <th>${t('thAge')}</th>
+              <th>${t('thHeight')}</th>
+              <th>${t('thFoot')}</th>
+              <th>${t('thMarketValue')}</th>
+              <th style="text-align:center;">${t('thGoals')}</th>
+              <th style="text-align:center;">${t('thAssists')}</th>
+              <th style="text-align:center;">${t('thCards')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.map((p) => {
+              const posInfo = getPosLabel(p.position);
+              const posLower = (p.position || 'm').toLowerCase();
+              const countryName = trCountry(p);
+              const flagHtml = p.flagUrl
+                ? `<img class="flag-img" src="${p.flagUrl}" alt="${countryName || p.citizenship}" loading="lazy" />`
+                : '<i class="ri-earth-line"></i>';
+              const goals = Number(p.goals) || 0;
+              const assists = Number(p.assists) || 0;
+              const yellow = Number(p.yellowCards) || 0;
+              const red = Number(p.redCards) || 0;
 
-      // OYUNCU PERFORMANS İSTATİSTİKLERİ: Gol, Asist, Sarı Kart, Kırmızı Kart
-      // Gol, asist, kartı olmayan oyuncularda bu istatistik kutusu kesinlikle gösterilmez.
-      const goals = Number(p.goals) || 0;
-      const assists = Number(p.assists) || 0;
-      const yellowCards = Number(p.yellowCards) || 0;
-      const redCards = Number(p.redCards) || 0;
-      const hasStats = (goals > 0 || assists > 0 || yellowCards > 0 || redCards > 0);
+              return `
+                <tr>
+                  <td class="squad-table-num">#${p.jerseyNumber || '—'}</td>
+                  <td>
+                    <div class="squad-table-player">
+                      <span class="player-shirt-circle ${posLower}" style="width:32px; height:32px; font-size:0.75rem; border-radius:8px;">${p.jerseyNumber || '—'}</span>
+                      <div>
+                        <div style="font-weight:700; color:var(--text-main);">${p.name}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">${p.positionDetail || posInfo.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="pos-tag pos-${posLower}"><i class="${posInfo.icon}"></i> ${posInfo.name}</span></td>
+                  <td><span style="display:inline-flex; align-items:center; gap:0.35rem; font-size:0.78rem;">${flagHtml} ${countryName || p.citizenship}</span></td>
+                  <td>${p.age ? `${p.age}` : '—'}</td>
+                  <td>${p.height ? `${p.height} cm` : '—'}</td>
+                  <td>${trFoot(p.preferredFoot)}</td>
+                  <td><strong style="color:var(--amed-green); font-family:var(--font-mono);">${formatMarketValue(p.marketValue)}</strong></td>
+                  <td style="text-align:center;">${goals > 0 ? `<strong style="color:#e11d48;">${goals}</strong>` : '—'}</td>
+                  <td style="text-align:center;">${assists > 0 ? `<strong style="color:#10b981;">${assists}</strong>` : '—'}</td>
+                  <td style="text-align:center;">
+                    ${yellow > 0 ? `<span class="mini-card-icon yellow" title="${yellow} ${t('yellowCard')}"></span> ${yellow}` : ''}
+                    ${red > 0 ? `<span class="mini-card-icon red" title="${red} ${t('redCard')}" style="margin-left:4px;"></span> ${red}` : ''}
+                    ${yellow === 0 && red === 0 ? '—' : ''}
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+  } else {
+    if (tableWrapEl) tableWrapEl.style.display = 'none';
+    if (gridEl) {
+      gridEl.style.display = 'grid';
+      gridEl.innerHTML = filtered.map((p) => {
+        const posInfo = getPosLabel(p.position);
+        const posLower = (p.position || 'm').toLowerCase();
+        const countryName = trCountry(p);
 
-      let statsHtml = '';
-      if (hasStats) {
-        statsHtml = `
-          <div class="player-performance-strip">
-            ${goals > 0 ? `<span class="pstat-pill goal" title="${goals} ${t('goalWord') || 'Gol'}"><i class="ri-football-line"></i> ${goals} ${t('goalWord') || 'Gol'}</span>` : ''}
-            ${assists > 0 ? `<span class="pstat-pill assist" title="${assists} ${t('assistWord') || 'Asist'}"><i class="ri-magic-line"></i> ${assists} ${t('assistWord') || 'Asist'}</span>` : ''}
-            ${yellowCards > 0 ? `<span class="pstat-pill yellow-card" title="${yellowCards} ${t('yellowCardTooltip') || 'Sarı Kart'}"><span class="mini-card-icon yellow"></span> ${yellowCards} ${t('yellowCard') || 'Sarı'}</span>` : ''}
-            ${redCards > 0 ? `<span class="pstat-pill red-card" title="${redCards} ${t('redCardTooltip') || 'Kırmızı Kart'}"><span class="mini-card-icon red"></span> ${redCards} ${t('redCard') || 'Kırmızı'}</span>` : ''}
-          </div>
-        `;
-      }
+        let natHtml = '';
+        if (countryName || p.citizenship) {
+          const flagHtml = p.flagUrl
+            ? `<img class="flag-img" src="${p.flagUrl}" alt="${countryName || p.citizenship}" loading="lazy" />`
+            : '<i class="ri-earth-line"></i>';
+          natHtml = `
+            <span class="player-nat-pill" title="${countryName || p.citizenship}">
+              ${flagHtml} <span>${countryName || p.citizenship}</span>
+            </span>
+          `;
+        }
 
-      return `
-        <div class="player-card">
-          <div class="player-top">
-            <div class="player-shirt-circle">
-              #${p.jerseyNumber || '—'}
+        const goals = Number(p.goals) || 0;
+        const assists = Number(p.assists) || 0;
+        const yellowCards = Number(p.yellowCards) || 0;
+        const redCards = Number(p.redCards) || 0;
+        const hasStats = (goals > 0 || assists > 0 || yellowCards > 0 || redCards > 0);
+
+        let statsHtml = '';
+        if (hasStats) {
+          statsHtml = `
+            <div class="player-performance-strip">
+              ${goals > 0 ? `<span class="pstat-pill goal" title="${goals} Gol"><i class="ri-football-line"></i> ${goals} ${t('goalWord') || 'Gol'}</span>` : ''}
+              ${assists > 0 ? `<span class="pstat-pill assist" title="${assists} Asist"><i class="ri-magic-line"></i> ${assists} ${t('assistWord') || 'Asist'}</span>` : ''}
+              ${yellowCards > 0 ? `<span class="pstat-pill yellow-card" title="${yellowCards} Sarı"><span class="mini-card-icon yellow"></span> ${yellowCards} ${t('yellowCard') || 'Sarı'}</span>` : ''}
+              ${redCards > 0 ? `<span class="pstat-pill red-card" title="${redCards} Kırmızı"><span class="mini-card-icon red"></span> ${redCards} ${t('redCard') || 'Kırmızı'}</span>` : ''}
             </div>
-            <div>
-              <div class="player-name">${p.name}</div>
-              <div class="player-pos-row">
-                <span class="pos-tag"><i class="${posInfo.icon}"></i> ${posInfo.name}</span>
-                ${natHtml}
+          `;
+        }
+
+        return `
+          <div class="player-card">
+            <div class="player-top">
+              <div class="player-shirt-circle ${posLower}">
+                #${p.jerseyNumber || '—'}
+              </div>
+              <div style="min-width:0; flex:1;">
+                <div class="player-name">${p.name}</div>
+                <div class="player-pos-row">
+                  <span class="pos-tag pos-${posLower}"><i class="${posInfo.icon}"></i> ${p.positionDetail || posInfo.name}</span>
+                  ${natHtml}
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="player-metrics">
-            <div>
-              <div class="player-metric-label">${t('ageHeightLbl')}</div>
-              <div class="player-metric-val">${p.age ? `${p.age} ${t('ageWord')}` : '—'} ${p.height ? `• ${p.height}cm` : ''}</div>
+            <div class="player-metrics">
+              <div>
+                <div class="player-metric-label">${t('ageHeightLbl')}</div>
+                <div class="player-metric-val">${p.age ? `${p.age} ${t('ageWord')}` : '—'} ${p.height ? `• ${p.height}cm` : ''}</div>
+              </div>
+              <div>
+                <div class="player-metric-label">${t('footLbl')}</div>
+                <div class="player-metric-val">${trFoot(p.preferredFoot)}</div>
+              </div>
+              <div>
+                <div class="player-metric-label">${t('marketValLbl')}</div>
+                <div class="player-metric-val" style="color: var(--amed-green);">${formatMarketValue(p.marketValue)}</div>
+              </div>
             </div>
-            <div>
-              <div class="player-metric-label">${t('footLbl')}</div>
-              <div class="player-metric-val">${trFoot(p.preferredFoot)}</div>
-            </div>
-            <div>
-              <div class="player-metric-label">${t('marketValLbl')}</div>
-              <div class="player-metric-val" style="color: var(--amed-green);">${formatMarketValue(p.marketValue)}</div>
-            </div>
-          </div>
 
-          ${statsHtml}
-        </div>
-      `;
-    })
-    .join('');
+            ${statsHtml}
+          </div>
+        `;
+      }).join('');
+    }
+  }
 }
 
 function renderRoundSelector() {
@@ -2140,7 +2434,7 @@ function renderModalBody() {
     `;
   }
 
-  // SEKME 3: KADROLAR & SOFASCORE PUANLARI
+  // SEKME 3: KADROLAR, TAKTİKSEL SAHA VE SOFASCORE PUANLARI
   else if (activeModalTab === 'lineups') {
     const homeStarters = lu?.home?.starters || [];
     const awayStarters = lu?.away?.starters || [];
@@ -2244,11 +2538,169 @@ function renderModalBody() {
       `;
     };
 
-    container.innerHTML = `
-      <div class="lineups-grid">
-        ${renderTeamList(lu.home)}
-        ${renderTeamList(lu.away)}
+    const renderSubstitutesBenchCard = (homeSubs, awaySubs) => {
+      return `
+        <div class="card" style="margin-top: 1.25rem;">
+          <div class="card-header">
+            <span class="card-title"><i class="ri-exchange-line"></i> ${t('benchHeader')} (${t('substitutesBenchWord')})</span>
+          </div>
+          <div class="lineups-grid" style="padding: 0.5rem 0.75rem;">
+            <div>
+              <div style="font-size:0.75rem; font-weight:800; color:var(--amed-green); margin-bottom:0.4rem; padding-left:0.5rem;">
+                🛡️ ${lu.home?.teamName || t('homeTeamSub')} (${homeSubs.length} ${t('substitutesWord')})
+              </div>
+              ${homeSubs.map(renderPlayerRow).join('')}
+              ${homeSubs.length === 0 ? `<div style="padding:0.75rem; font-size:0.8rem; color:var(--text-muted);">${t('noBenchPlayers')}</div>` : ''}
+            </div>
+            <div>
+              <div style="font-size:0.75rem; font-weight:800; color:var(--amed-red); margin-bottom:0.4rem; padding-left:0.5rem;">
+                ⚔️ ${lu.away?.teamName || t('awayTeamSub')} (${awaySubs.length} ${t('substitutesWord')})
+              </div>
+              ${awaySubs.map(renderPlayerRow).join('')}
+              ${awaySubs.length === 0 ? `<div style="padding:0.75rem; font-size:0.8rem; color:var(--text-muted);">${t('noBenchPlayers')}</div>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    // TAKTİKSEL SAHA GÖRÜNÜMÜ MOTORU
+    const renderPitchHTML = () => {
+      const mode = appState.pitchTeamMode || 'both';
+      let pinsHtml = '';
+      let bannerHtml = '';
+
+      if (mode === 'both') {
+        const homeCoords = getTacticalStarterCoords(lu.home?.starters || [], lu.home?.formation, false, false);
+        const awayCoords = getTacticalStarterCoords(lu.away?.starters || [], lu.away?.formation, true, false);
+
+        pinsHtml = [
+          ...awayCoords.map((c) => renderPitchPlayerPin(c, 'away', intel)),
+          ...homeCoords.map((c) => renderPitchPlayerPin(c, 'home', intel))
+        ].join('');
+
+        bannerHtml = `
+          <div class="pitch-match-banner">
+            <div class="pitch-banner-team away">
+              <div class="pbt-team-info">
+                <span class="pitch-team-dot away"></span>
+                <span class="pbt-name">${lu.away?.teamName || t('awayTeamSub')}</span>
+              </div>
+              <span class="pbt-formation">${lu.away?.formation || '4-2-3-1'}</span>
+            </div>
+            <div class="pbt-vs-badge">VS</div>
+            <div class="pitch-banner-team home">
+              <span class="pbt-formation">${lu.home?.formation || '4-2-3-1'}</span>
+              <div class="pbt-team-info">
+                <span class="pbt-name">${lu.home?.teamName || t('homeTeamSub')}</span>
+                <span class="pitch-team-dot home"></span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (mode === 'home') {
+        const homeCoords = getTacticalStarterCoords(lu.home?.starters || [], lu.home?.formation, false, true);
+        pinsHtml = homeCoords.map((c) => renderPitchPlayerPin(c, 'home', intel)).join('');
+        bannerHtml = `
+          <div class="pitch-match-banner single">
+            <div class="pitch-banner-team home">
+              <div class="pbt-team-info">
+                <span class="pitch-team-dot home"></span>
+                <span class="pbt-name">${lu.home?.teamName || t('homeTeamSub')}</span>
+              </div>
+              <span class="pbt-formation">${lu.home?.formation || '4-2-3-1'}</span>
+            </div>
+          </div>
+        `;
+      } else if (mode === 'away') {
+        const awayCoords = getTacticalStarterCoords(lu.away?.starters || [], lu.away?.formation, false, true);
+        pinsHtml = awayCoords.map((c) => renderPitchPlayerPin(c, 'away', intel)).join('');
+        bannerHtml = `
+          <div class="pitch-match-banner single">
+            <div class="pitch-banner-team away">
+              <div class="pbt-team-info">
+                <span class="pitch-team-dot away"></span>
+                <span class="pbt-name">${lu.away?.teamName || t('awayTeamSub')}</span>
+              </div>
+              <span class="pbt-formation">${lu.away?.formation || '4-2-3-1'}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        ${bannerHtml}
+        <div class="tactical-pitch-wrapper">
+          <div class="tactical-pitch">
+            <!-- Saha Çizgileri -->
+            <div class="pitch-lines-layer">
+              <div class="pitch-corner-arc tl"></div>
+              <div class="pitch-corner-arc tr"></div>
+              <div class="pitch-corner-arc bl"></div>
+              <div class="pitch-corner-arc br"></div>
+              <div class="pitch-half-line"></div>
+              <div class="pitch-center-circle"></div>
+              <div class="pitch-center-spot"></div>
+
+              <div class="pitch-penalty-box top"></div>
+              <div class="pitch-goal-area top"></div>
+              <div class="pitch-penalty-spot top"></div>
+              <div class="pitch-penalty-arc top"></div>
+
+              <div class="pitch-penalty-box bottom"></div>
+              <div class="pitch-goal-area bottom"></div>
+              <div class="pitch-penalty-spot bottom"></div>
+              <div class="pitch-penalty-arc bottom"></div>
+            </div>
+
+            <!-- Saha Üzerindeki Futbolcular -->
+            ${pinsHtml}
+          </div>
+        </div>
+
+        ${renderSubstitutesBenchCard(lu.home?.substitutes || [], lu.away?.substitutes || [])}
+      `;
+    };
+
+    // Kontroller ve Görünüm Seçimi
+    const isPitch = (appState.lineupViewMode || 'pitch') === 'pitch';
+    const pitchTeamMode = appState.pitchTeamMode || 'both';
+
+    const controlsHtml = `
+      <div class="lineup-mode-controls">
+        <div class="lineup-tabs-left">
+          <button type="button" class="lineup-tab-btn ${isPitch ? 'active' : ''}" onclick="window.setLineupViewMode('pitch')">
+            <i class="ri-football-fill"></i> <span>${t('tacticalPitch')}</span>
+          </button>
+          <button type="button" class="lineup-tab-btn ${!isPitch ? 'active' : ''}" onclick="window.setLineupViewMode('list')">
+            <i class="ri-list-check-2"></i> <span>${t('playerList')}</span>
+          </button>
+        </div>
+
+        ${isPitch ? `
+          <div class="lineup-tabs-right">
+            <button type="button" class="pitch-team-btn ${pitchTeamMode === 'both' ? 'active' : ''}" onclick="window.setPitchTeamMode('both')" title="${t('twoTeamsFacingTitle')}">
+              <i class="ri-swap-line"></i> <span>${t('fullPitch')}</span>
+            </button>
+            <button type="button" class="pitch-team-btn ${pitchTeamMode === 'home' ? 'active' : ''}" onclick="window.setPitchTeamMode('home')" title="${t('onlyHomeTitle')}">
+              <span class="pitch-team-dot home"></span> <span>${lu.home?.teamName || t('homeTeamSub')}</span>
+            </button>
+            <button type="button" class="pitch-team-btn ${pitchTeamMode === 'away' ? 'active' : ''}" onclick="window.setPitchTeamMode('away')" title="${t('onlyAwayTitle')}">
+              <span class="pitch-team-dot away"></span> <span>${lu.away?.teamName || t('awayTeamSub')}</span>
+            </button>
+          </div>
+        ` : ''}
       </div>
+    `;
+
+    container.innerHTML = `
+      ${controlsHtml}
+      ${isPitch ? renderPitchHTML() : `
+        <div class="lineups-grid">
+          ${renderTeamList(lu.home)}
+          ${renderTeamList(lu.away)}
+        </div>
+      `}
     `;
   }
 
@@ -2361,6 +2813,18 @@ function switchModalTab(tabKey) {
 window.setLanguage = setLanguage;
 window.switchTab = switchTab;
 window.switchModalTab = switchModalTab;
+window.setLineupViewMode = (mode) => {
+  appState.lineupViewMode = mode;
+  renderModalBody();
+};
+window.setPitchTeamMode = (mode) => {
+  appState.pitchTeamMode = mode;
+  renderModalBody();
+};
+window.setSquadViewMode = (mode) => {
+  appState.squadViewMode = mode;
+  renderSquad();
+};
 
 function initApp() {
   // Logo & Bakûr Yazısına Tıklanınca Ana Sayfaya (overview) Yönlendirme
@@ -2515,6 +2979,16 @@ function initApp() {
   document.getElementById('playerSearchInput')?.addEventListener('input', (e) => {
     appState.playerSearch = e.target.value;
     renderSquad();
+  });
+
+  // Kadro Görünüm Değiştirici (Kart vs Tablo)
+  document.querySelectorAll('#squadViewSwitch .squad-view-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#squadViewSwitch .squad-view-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      appState.squadViewMode = btn.dataset.sview || 'grid';
+      renderSquad();
+    });
   });
 
   // Hafta Seçici

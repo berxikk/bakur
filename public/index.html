@@ -39,7 +39,7 @@
   <!-- Cropper.js Görsel Kırpma Kütüphanesi -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=35" />
+  <link rel="stylesheet" href="/styles.css?v=39" />
 </head>
 <body style="background-color: #0C1014 !important; color: #f8fafc;">
   <div class="app-shell" id="appShell">
@@ -435,6 +435,12 @@
 
     <!-- SEKME 4: AMEDSPOR KADROSU -->
     <section class="tab-panel" id="tab-squad">
+      <!-- Profesyonel Kadro KPI ve Değer Özeti -->
+      <div class="squad-kpi-bar" id="squadKpiBar"></div>
+
+      <!-- Kadro Liderleri & Öne Çıkanlar Şeridi -->
+      <div class="squad-spotlight-strip" id="squadSpotlightStrip"></div>
+
       <div class="squad-controls">
         <div class="filter-group" id="posFilterGroup">
           <button class="filter-btn active" data-pos="ALL">
@@ -454,18 +460,31 @@
           </button>
         </div>
 
-        <div class="search-wrap">
-          <i class="ri-search-line"></i>
-          <input
-            type="text"
-            class="search-input"
-            id="playerSearchInput"
-            placeholder="Futbolcu adı, mevki veya ülke ara..."
-          />
+        <div class="squad-controls-right">
+          <div class="search-wrap squad-search-box">
+            <i class="ri-search-line"></i>
+            <input
+              type="text"
+              class="search-input"
+              id="playerSearchInput"
+              placeholder="Futbolcu adı, mevki veya ülke ara..."
+              data-i18n-ph="searchPlaceholder"
+            />
+          </div>
+
+          <div class="squad-view-switch" id="squadViewSwitch">
+            <button type="button" class="squad-view-btn active" data-sview="grid" title="Kart Görünümü" data-i18n-title="viewCardsTooltip">
+              <i class="ri-grid-fill"></i>
+            </button>
+            <button type="button" class="squad-view-btn" data-sview="table" title="Detaylı Tablo Görünümü" data-i18n-title="viewTableTooltip">
+              <i class="ri-table-line"></i>
+            </button>
+          </div>
         </div>
       </div>
 
       <div class="squad-grid" id="squadGrid"></div>
+      <div class="squad-table-wrap" id="squadTableWrap" style="display:none;"></div>
     </section>
 
     <!-- SEKME 5: HAFTANIN MAÇLARI -->
@@ -633,8 +652,8 @@
   </div> <!-- /#followsModal -->
 
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-  <script src="/i18n.js?v=36"></script>
-  <script src="/app.js?v=36"></script>
-  <script type="module" src="/community.js?v=36"></script>
+  <script src="/i18n.js?v=39"></script>
+  <script src="/app.js?v=39"></script>
+  <script type="module" src="/community.js?v=39"></script>
 </body>
 </html>
