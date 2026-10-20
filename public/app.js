@@ -1695,9 +1695,20 @@ function getCommentaryMeta(c) {
   const rawText = (c && c.text) ? String(c.text) : '';
   const text = rawText.toLocaleLowerCase('tr-TR');
   const cType = (c && c.type) ? String(c.type).toLowerCase() : '';
+  const cKind = (c && c.kind) ? String(c.kind).toLowerCase() : '';
+
+  // 0. Whistle / Hakem Düdüğü & Başlama Düdüğü
+  if (cType.includes('whistle') || cType.includes('kickoff') || cKind.includes('whistle') || text.includes('düdüğüyle başladı') || text.includes('ilk düdük') || text.includes('ilk düdüğü') || text.includes('maç bitti') || text.includes('son düdüğü')) {
+    return {
+      badgeClass: 'comm-type-whistle',
+      icon: '<i class="ri-volume-vibrate-line"></i>',
+      badgeIcon: '<i class="ri-volume-vibrate-line"></i>',
+      label: t('whistleWord') || 'DÜDÜK'
+    };
+  }
 
   // 1. Goal / Gol
-  if (cType.includes('goal') || text.includes('gol') || text.includes('goal') || text.includes('goool') || text.includes('ağları sarstı')) {
+  if (cType.includes('goal') || text.includes('goool') || text.includes('ağlarla buluşturdu') || text.includes('ağları sarstı') || (text.includes('gol') && !text.includes('ofsayt olsun'))) {
     return {
       badgeClass: 'comm-type-goal',
       icon: '<i class="ri-football-line"></i>',

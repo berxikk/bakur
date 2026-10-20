@@ -917,12 +917,24 @@ function generateRichMatchCommentary(eventInfo, rawCommentary, keyEvents, statis
   }
 
   // 1. Kickoff düdüğü (1')
+  const isAmedHome = String(eventInfo?.homeTeam?.id) === String(AMED_ESPN_ID) ||
+    (eventInfo?.homeTeam?.name || '').toLowerCase().includes('amed') ||
+    (eventInfo?.homeTeam?.shortName || '').toLowerCase().includes('amed');
+  const isAmedAway = String(eventInfo?.awayTeam?.id) === String(AMED_ESPN_ID) ||
+    (eventInfo?.awayTeam?.name || '').toLowerCase().includes('amed') ||
+    (eventInfo?.awayTeam?.shortName || '').toLowerCase().includes('amed');
+  const isAmedMatch = isAmedHome || isAmedAway;
+
+  const kickoffText = isAmedMatch
+    ? "Karşılaşma hakemin ilk düdüğüyle başladı! Amed'in her attığı gol, her yediği ofsayt olsun!❤️💚"
+    : "Karşılaşma hakemin ilk düdüğüyle başladı!";
+
   commItems.push({
     minute: 1,
     time: "1'",
     kind: 'whistle',
     type: 'kickoff',
-    text: `Karşılaşma hakemin ilk düdüğüyle başladı! ${homeName} ve ${awayName} sahadaki yerini aldı. Her iki takıma da başarılar dileriz.`
+    text: kickoffText
   });
 
   // 2. ESPN Key Events (Goller, Kartlar, Değişiklikler)

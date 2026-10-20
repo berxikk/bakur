@@ -163,7 +163,7 @@ function toast(msg, type = 'ok') {
 
 function errMsg(error) {
   const m = (error?.message || '').toLowerCase();
-  if (m.includes('captcha')) return T('captchaRequired');
+  if (m.includes('captcha')) return 'Giriş yapılamadı: Supabase panelinde "Bot Protection / Captcha" açık kalmış. Lütfen Supabase ayarlarından Captcha korumasını kapatın.';
   if (m.includes('invalid login')) return T('invalidCredentials');
   if (m.includes('email not confirmed')) return T('emailNotConfirmed');
   if (m.includes('password') && m.includes('6')) return T('minPassword');
@@ -279,116 +279,10 @@ function openDialog(html, cls = '') {
   return wrap;
 }
 
-const HCAPTCHA_SITEKEY = 'a57cfb98-c022-4708-b5c0-d3a80af8657c';
-let authCaptchaWidgetId = null;
-
-function renderAuthCaptcha(containerId = 'authHcaptcha') {
-  const container = $(containerId);
-  if (!container) return;
-
-  // Placeholder showing that security check is loading
-  container.innerHTML = `
-    <div class="hcaptcha-loading-placeholder" style="display:flex; align-items:center; justify-content:center; gap:8px; color:var(--text-secondary); font-size:0.82rem; padding:12px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.08); width:100%; min-height:78px; box-sizing:border-box;">
-      <i class="ri-loader-4-line ri-spin" style="font-size:1.15rem; color:var(--amed-green);"></i>
-      <span>${T('captchaLoading') || 'Güvenlik doğrulaması yükleniyor...'}</span>
-    </div>
-  `;
-
-  const doRender = () => {
-    if (!window.hcaptcha || typeof window.hcaptcha.render !== 'function') return false;
-    const currentContainer = $(containerId);
-    if (!currentContainer) return false;
-    try {
-      currentContainer.innerHTML = '';
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark' || document.body.classList.contains('dark-theme');
-      authCaptchaWidgetId = window.hcaptcha.render(currentContainer, {
-        sitekey: HCAPTCHA_SITEKEY,
-        theme: isDark ? 'dark' : 'light',
-        size: 'normal',
-        callback: () => {
-          const msgEl = document.querySelector('.c-dialog-auth .c-form-msg');
-          if (msgEl) {
-            msgEl.className = 'c-form-msg';
-            msgEl.textContent = '';
-            msgEl.style.display = 'none';
-          }
-        },
-        'expired-callback': () => {},
-        'error-callback': (err) => {
-          console.warn('hCaptcha error:', err);
-        }
-      });
-      return true;
-    } catch (e) {
-      console.warn('hCaptcha render hatası:', e);
-      return false;
-    }
-  };
-
-  if (window.hcaptcha && typeof window.hcaptcha.render === 'function') {
-    doRender();
-  } else {
-    let tries = 0;
-    const interval = setInterval(() => {
-      tries++;
-      if (window.hcaptcha && typeof window.hcaptcha.render === 'function') {
-        clearInterval(interval);
-        doRender();
-      } else if (tries > 35) {
-        clearInterval(interval);
-        const currentContainer = $(containerId);
-        if (currentContainer && (!window.hcaptcha || typeof window.hcaptcha.render !== 'function')) {
-          currentContainer.innerHTML = `
-            <div style="border:1px dashed rgba(227,6,19,0.5); background:rgba(227,6,19,0.08); border-radius:8px; padding:10px 14px; text-align:center; font-size:0.8rem; color:var(--text-primary); line-height:1.4; width:100%; box-sizing:border-box;">
-              <div style="display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:4px; font-weight:700; color:#e30613;">
-                <i class="ri-shield-cross-line" style="font-size:1.1rem;"></i>
-                <span>hCaptcha Yüklenemedi</span>
-              </div>
-              <div style="color:var(--text-secondary); font-size:0.77rem;">
-                ${T('captchaBlocked') || 'Güvenlik testi (hCaptcha) yüklenemedi. Lütfen reklam engelleyicinizi (AdBlock / Brave Kalkanı) bu site için devre dışı bırakıp sayfayı yenileyiniz.'}
-              </div>
-            </div>
-          `;
-        }
-      }
-    }, 100);
-  }
-}
-
-function getAuthCaptchaToken() {
-  if (window.hcaptcha) {
-    if (authCaptchaWidgetId !== null) {
-      try {
-        const resp = window.hcaptcha.getResponse(authCaptchaWidgetId);
-        if (resp) return resp;
-      } catch (e) {}
-    }
-    try {
-      const resp = window.hcaptcha.getResponse();
-      if (resp) return resp;
-    } catch (e) {}
-  }
-  const el = document.querySelector('[name="h-captcha-response"]') || document.querySelector('[name="g-recaptcha-response"]');
-  if (el && el.value) return el.value;
-  return null;
-}
-
-function resetAuthCaptcha() {
-  if (window.hcaptcha && authCaptchaWidgetId !== null) {
-    try {
-      window.hcaptcha.reset(authCaptchaWidgetId);
-    } catch (e) {}
-  }
-}
-
 function closeDialog() {
-  authCaptchaWidgetId = null;
   $('cDialog')?.remove();
 }
 
-window.renderAuthCaptcha = renderAuthCaptcha;
-window.getAuthCaptchaToken = getAuthCaptchaToken;
-window.resetAuthCaptcha = resetAuthCaptcha;
 window.openAuth = openAuth;
 
 function setBusy(form, busy) {
@@ -426,7 +320,6 @@ function openAuth(mode = 'login') {
         <label class="c-field"><span>${T('email')}</span><input type="email" name="email" autocomplete="email" placeholder="ornek@email.com" required /></label>
         <label class="c-field"><span>${T('password')}</span><input type="password" name="password" autocomplete="current-password" required /></label>
         <div class="c-row-end"><button type="button" class="c-link" data-action="auth-mode" data-mode="reset">${T('forgot')}</button></div>
-        <div id="authHcaptcha" style="display:flex; justify-content:center; margin:0.75rem 0; min-height:78px;"></div>
         <div class="c-form-msg"></div>
         <button type="submit" class="c-btn c-btn-primary">${T('login')}</button>
       </form>
@@ -449,7 +342,6 @@ function openAuth(mode = 'login') {
         <div style="font-size:0.76rem; color:var(--text-secondary); margin-top:-0.4rem; margin-bottom:0.75rem; line-height:1.35;">
           Kayıt olabilmek için bu alana <strong>"her bijî amedspor"</strong> yazmalısınız.
         </div>
-        <div id="authHcaptcha" style="display:flex; justify-content:center; margin:0.75rem 0; min-height:78px;"></div>
         <div class="c-form-msg"></div>
         <button type="submit" class="c-btn c-btn-primary">${T('signup')}</button>
       </form>
@@ -460,7 +352,6 @@ function openAuth(mode = 'login') {
       <p class="c-dialog-sub">${T('resetSub')}</p>
       <form class="c-form" data-form="reset" novalidate>
         <label class="c-field"><span>${T('email')}</span><input type="email" name="email" autocomplete="email" required /></label>
-        <div id="authHcaptcha" style="display:flex; justify-content:center; margin:0.75rem 0; min-height:78px;"></div>
         <div class="c-form-msg"></div>
         <button type="submit" class="c-btn c-btn-primary">${T('sendReset')}</button>
       </form>
@@ -475,9 +366,6 @@ function openAuth(mode = 'login') {
       </form>`;
   }
   openDialog(html, 'c-dialog-auth');
-  if (['signup', 'login', 'reset'].includes(mode)) {
-    setTimeout(() => renderAuthCaptcha('authHcaptcha'), 60);
-  }
 }
 
 async function handleAuthForm(form) {
@@ -485,7 +373,6 @@ async function handleAuthForm(form) {
   const fd = new FormData(form);
   const email = String(fd.get('email') || '').trim();
   const password = String(fd.get('password') || '');
-  const captchaToken = getAuthCaptchaToken();
   const redirectTo = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
     ? window.location.origin
     : 'https://bakur.onread.com';
@@ -500,19 +387,11 @@ async function handleAuthForm(form) {
         setBusy(form, false);
         return formMsg(form, 'Hesap güvenliği ve gizlilik için lütfen kayıtlı e-posta adresinizi giriniz.');
       }
-      if (!captchaToken && $('authHcaptcha')) {
-        setBusy(form, false);
-        return formMsg(form, T('captchaRequired'));
-      }
       const { data: authData, error } = await sb.auth.signInWithPassword({
         email: loginEmail,
-        password,
-        options: {
-          captchaToken
-        }
+        password
       });
       if (error) {
-        resetAuthCaptcha();
         throw error;
       }
       if (authData?.session) {
@@ -544,11 +423,6 @@ async function handleAuthForm(form) {
         return formMsg(form, 'Kayıt olabilmek için lütfen doğrulama kutusuna "her bijî amedspor" yazınız! 💚❤️');
       }
 
-      if (!captchaToken && $('authHcaptcha')) {
-        setBusy(form, false);
-        return formMsg(form, T('captchaRequired'));
-      }
-
       const username = String(fd.get('username') || '').trim();
       if (!/^[A-Za-z0-9_.]{3,24}$/.test(username)) {
         setBusy(form, false);
@@ -564,12 +438,10 @@ async function handleAuthForm(form) {
         password,
         options: {
           data: { username, display_name: username },
-          emailRedirectTo: redirectTo,
-          captchaToken
+          emailRedirectTo: redirectTo
         }
       });
       if (error) {
-        resetAuthCaptcha();
         throw error;
       }
       if (!data.session) {
@@ -585,16 +457,10 @@ async function handleAuthForm(form) {
         setBusy(form, false);
         return formMsg(form, 'Lütfen şifre sıfırlama bağlantısının gönderileceği e-posta adresinizi giriniz.');
       }
-      if (!captchaToken && $('authHcaptcha')) {
-        setBusy(form, false);
-        return formMsg(form, T('captchaRequired'));
-      }
       const { error } = await sb.auth.resetPasswordForEmail(resetEmail, {
-        redirectTo,
-        captchaToken
+        redirectTo
       });
       if (error) {
-        resetAuthCaptcha();
         throw error;
       }
       formMsg(form, T('resetSent'), 'ok');
@@ -605,7 +471,6 @@ async function handleAuthForm(form) {
       toast(T('passwordUpdated'));
     }
   } catch (error) {
-    resetAuthCaptcha();
     formMsg(form, errMsg(error));
   }
   setBusy(form, false);
