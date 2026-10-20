@@ -2044,32 +2044,37 @@ async function checkOnlineNSFW(buffer, ext) {
 
 // Harici Online Resim Barındırma Servisi (Catbox.moe - Kalıcı ve Ücretsiz Doğrudan Resim Linki)
 async function uploadToExternalImageHost(buffer, ext) {
-  try {
-    const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
-    const mime = mimeMap[ext] || 'image/jpeg';
-    const filename = `amed_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+  const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
+  const mime = mimeMap[ext] || 'image/jpeg';
 
-    const fd = new FormData();
-    fd.append('reqtype', 'fileupload');
-    const blob = new Blob([buffer], { type: mime });
-    fd.append('fileToUpload', blob, filename);
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const filename = `amed_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
+      const fd = new FormData();
+      fd.append('reqtype', 'fileupload');
+      const blob = new Blob([buffer], { type: mime });
+      fd.append('fileToUpload', blob, filename);
 
-    const res = await fetch('https://catbox.moe/user/api.php', {
-      method: 'POST',
-      body: fd,
-      signal: AbortSignal.timeout(12000)
-    });
+      const res = await fetch('https://catbox.moe/user/api.php', {
+        method: 'POST',
+        body: fd,
+        signal: AbortSignal.timeout(15000)
+      });
 
-    if (res.ok) {
-      const urlText = (await res.text()).trim();
-      if (urlText.startsWith('https://files.catbox.moe/')) {
-        console.log('Harici hosting yüklemesi başarılı:', urlText);
-        return urlText;
+      if (res.ok) {
+        const urlText = (await res.text()).trim();
+        if (urlText.startsWith('https://files.catbox.moe/')) {
+          console.log(`[Upload] Harici hosting (Catbox) deneme #${attempt} başarılı:`, urlText);
+          return urlText;
+        }
       }
+      console.warn(`[Upload] Harici hosting (Catbox) deneme #${attempt} durum:`, res.status);
+    } catch (err) {
+      console.warn(`[Upload] Harici hosting (Catbox) deneme #${attempt} hatası:`, err.message);
     }
-    console.warn('Harici hosting (Catbox) beklenmeyen durum kodu:', res.status);
-  } catch (err) {
-    console.warn('Harici hosting (Catbox) upload uyarısı:', err.message);
+    if (attempt < 3) {
+      await new Promise(r => setTimeout(r, 1200));
+    }
   }
   return null;
 }

@@ -1449,11 +1449,21 @@ function initPageAvatarUploader() {
   const preview = $('pageAvatarPreview');
 
   if (removeBtn) {
-    removeBtn.addEventListener('click', () => {
+    removeBtn.addEventListener('click', async () => {
       if (inp) inp.value = '';
       const dummyP = { ...(S.profile || {}), avatar_url: null };
       if (preview) preview.innerHTML = avatarHTML(dummyP, 64);
       removeBtn.style.display = 'none';
+      if (me()) {
+        try {
+          const { data } = await sb.from('profiles').update({ avatar_url: null }).eq('id', me()).select().single();
+          if (data) {
+            S.profile = data;
+            try { localStorage.setItem('amed_cached_user_profile', JSON.stringify(data)); } catch (_) {}
+            renderHeaderAuth();
+          }
+        } catch (_) {}
+      }
       toast(T('photoRemovedToast'));
     });
   }
@@ -1480,7 +1490,25 @@ function initPageAvatarUploader() {
             preview.innerHTML = `<img class="c-avatar" style="width:64px;height:64px;border:2px solid var(--amed-green);object-fit:cover;" src="${esc(url)}?t=${Date.now()}" alt="Avatar" />`;
           }
           if (removeBtn) removeBtn.style.display = 'inline-flex';
-          toast(T('photoSelectedToast'));
+
+          // Profil fotoğrafını beklemeden otomatik olarak Supabase'e kalıcı olarak kaydet
+          if (me()) {
+            try {
+              const { data, error } = await sb.from('profiles').update({ avatar_url: url }).eq('id', me()).select().single();
+              if (!error && data) {
+                S.profile = data;
+                try { localStorage.setItem('amed_cached_user_profile', JSON.stringify(data)); } catch (_) {}
+                renderHeaderAuth();
+                toast(T('saved'));
+              } else {
+                toast(T('photoSelectedToast'));
+              }
+            } catch (_) {
+              toast(T('photoSelectedToast'));
+            }
+          } else {
+            toast(T('photoSelectedToast'));
+          }
         }
       } catch (err) {
         if (err.message !== 'Kırpma işlemi iptal edildi.') {
