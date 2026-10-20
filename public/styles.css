@@ -8662,63 +8662,108 @@ article.tweet-card.is-pinned {
 
 .cal-mobile-match-card {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border-radius: 14px;
-  background: var(--bg-subtle);
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.8rem 0.95rem;
+  border-radius: 12px;
+  background: var(--bg-card);
   border: 1px solid var(--border-light);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .cal-mobile-match-card:hover {
   transform: translateY(-2px);
-  border-color: var(--border-focus);
+  border-color: var(--amed-green-border);
+  box-shadow: var(--shadow-sm);
 }
 
-.cal-mobile-match-left {
+.cal-mobile-match-top-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-bottom: 1px dashed var(--border-light);
+  padding-bottom: 0.4rem;
 }
 
 .cal-mobile-match-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--text-muted);
 }
 
-.cal-mobile-match-teams {
+.cal-mobile-match-round {
+  color: var(--amed-green);
+  font-weight: 800;
+  font-size: 0.72rem;
+}
+
+.cal-mobile-match-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.cal-mobile-teams-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.cal-mobile-team-line {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.cal-mobile-team-line img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.cal-mobile-team-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.cal-mobile-team-line.is-amed .cal-mobile-team-name {
+  font-weight: 800;
+  color: var(--amed-green);
+}
+
+.cal-mobile-score-col {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: var(--font-sans);
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--text-main);
-}
-
-.cal-mobile-match-teams img {
-  width: 24px;
-  height: 24px;
-  object-fit: contain;
-}
-
-.cal-mobile-match-right {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  flex-shrink: 0;
 }
 
 .cal-mobile-match-badge {
   font-family: var(--font-mono);
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   padding: 0.28rem 0.65rem;
   border-radius: 8px;
+  white-space: nowrap;
 }
 
 .cal-mobile-match-badge.win {
@@ -8740,9 +8785,14 @@ article.tweet-card.is-pinned {
 }
 
 .cal-mobile-match-badge.upcoming {
-  background: var(--bg-card);
+  background: var(--bg-subtle);
   color: var(--text-secondary);
   border: 1px solid var(--border-light);
+}
+
+.cal-mobile-arrow {
+  font-size: 1.15rem;
+  color: var(--text-muted);
 }
 
 .cal-mobile-no-matches {
@@ -8753,33 +8803,121 @@ article.tweet-card.is-pinned {
   font-weight: 600;
 }
 
+/* Fikstür Liste Görünümü Filtre Çubuğu */
+.fixture-list-filter-bar {
+  padding: 0.85rem 1.35rem;
+  background: var(--bg-page);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 /* Telefon ekranlarında takvim ayarları */
 @media (max-width: 640px) {
   .cal-mobile-matches-section {
     display: block;
+    padding: 0.85rem 0.65rem 1.1rem;
+  }
+  .calendar-card .card-header {
+    padding: 0.65rem 0.65rem !important;
+    gap: 0.5rem !important;
+  }
+  .calendar-nav-controls {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 0.35rem !important;
+  }
+  .calendar-current-month {
+    min-width: 0 !important;
+    flex: 1 !important;
+    font-size: 0.88rem !important;
+    text-align: center !important;
+  }
+  #calTodayBtn {
+    padding: 0.28rem 0.55rem !important;
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
+  }
+  .fixture-list-filter-bar {
+    padding: 0.65rem 0.75rem !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+  #fixtureFilterGroup {
+    width: 100% !important;
+    display: flex !important;
+  }
+  #fixtureFilterGroup .filter-btn {
+    flex: 1 !important;
+    justify-content: center !important;
+  }
+  .wd-full {
+    display: none !important;
+  }
+  .wd-short {
+    display: inline !important;
+    font-weight: 800;
+    font-size: 0.65rem;
+  }
+  .calendar-weekdays {
+    gap: 0 !important;
+    width: 100% !important;
+  }
+  .calendar-weekdays div {
+    padding: 0.35rem 0 !important;
+    font-size: 0.65rem !important;
+    text-align: center !important;
+  }
+  .calendar-grid {
+    gap: 1px !important;
+    width: 100% !important;
+  }
+  .cal-day {
+    min-height: 44px !important;
+    padding: 0.15rem !important;
+    overflow: hidden !important;
   }
   .cal-day-num {
-    font-size: 0.72rem;
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
+    font-size: 0.68rem;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+  }
+  .cal-today-tag {
+    font-size: 0.55rem !important;
+    padding: 0px 3px !important;
   }
   .cal-match-top,
   .cal-match-opp-name {
     display: none !important;
   }
   .cal-match-card {
-    padding: 0.2rem !important;
+    padding: 0.15rem !important;
     min-height: 0 !important;
     align-items: center;
     justify-content: center;
   }
   .cal-match-opp img {
-    width: 18px !important;
-    height: 18px !important;
+    width: 16px !important;
+    height: 16px !important;
   }
   .cal-match-bottom {
-    font-size: 0.7rem !important;
+    font-size: 0.62rem !important;
+  }
+  .cal-match-bottom i {
+    display: none !important;
+  }
+  .cal-match-time,
+  .cal-match-score {
+    font-size: 0.62rem !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
   }
   .cal-result-badge {
     display: none !important;
@@ -10279,28 +10417,33 @@ article.tweet-card.is-pinned {
   align-items: center;
   z-index: 5;
   cursor: pointer;
-  transition: transform 0.18s ease, z-index 0.18s ease;
+  transition: transform 0.16s ease, z-index 0.16s ease;
+  user-select: none;
 }
 
 .pitch-player-pin:hover {
-  transform: translate(-50%, -52%) scale(1.1);
-  z-index: 20;
+  transform: translate(-50%, -50%) scale(1.18);
+  z-index: 50;
 }
 
 /* Forma Rozeti */
 .pitch-shirt {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 900;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.3);
   position: relative;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45);
   transition: all 0.15s ease;
+}
+
+.pitch-jersey-num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .pitch-shirt.home {
@@ -10327,57 +10470,66 @@ article.tweet-card.is-pinned {
   border: 2px solid #93c5fd;
 }
 
-/* Oyuncu Adı */
+/* Oyuncu Adı: Kısa, kompakt, taşmayan kutucuk */
 .pitch-name {
-  margin-top: 3px;
-  background: rgba(15, 23, 42, 0.85);
+  margin-top: 2px;
+  background: rgba(10, 16, 24, 0.92);
   backdrop-filter: blur(4px);
-  color: #ffffff;
-  font-size: 0.68rem;
+  color: #f1f5f9;
+  font-size: 0.6rem;
   font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 8px;
+  padding: 1px 4px;
+  border-radius: 4px;
   white-space: nowrap;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  letter-spacing: 0.2px;
-  max-width: 90px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  letter-spacing: 0.1px;
+  max-width: 58px;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
+  line-height: 1.25;
 }
 
-/* Oyuncu Puan Rozeti */
+/* Oyuncu Puan Rozeti: Formanın sağ alt köşesine düzgünce kenetlenir */
 .pitch-rating-tag {
   position: absolute;
-  top: -4px;
-  right: -8px;
-  padding: 1px 4px;
-  border-radius: 6px;
-  font-size: 0.62rem;
-  font-weight: 800;
+  bottom: -3px;
+  right: -5px;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 0.55rem;
+  font-weight: 900;
   font-family: var(--font-mono);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  z-index: 2;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  border: 1.5px solid #0c121e;
+  z-index: 3;
+  line-height: 1.2;
 }
 
 .pitch-rating-tag.high { background: #10b981; color: #ffffff; }
 .pitch-rating-tag.med { background: #f59e0b; color: #111827; }
 .pitch-rating-tag.low { background: #64748b; color: #ffffff; }
 
-/* Maç İçi Olay İkonları */
+/* Maç İçi Olay İkonları: Formanın sol üst köşesine kenetlenir */
 .pitch-events-strip {
   position: absolute;
   top: -4px;
-  left: -8px;
+  left: -4px;
   display: flex;
   align-items: center;
-  gap: 2px;
-  z-index: 2;
+  gap: 1px;
+  z-index: 3;
 }
 
 .pitch-event-icon {
-  font-size: 0.72rem;
-  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+  font-size: 0.62rem;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+}
+
+.pitch-btn-label {
+  display: inline-block;
 }
 
 @media (max-width: 768px) {
@@ -10390,16 +10542,55 @@ article.tweet-card.is-pinned {
     gap: 0.65rem;
   }
   .tactical-pitch {
-    height: 580px;
+    height: 600px;
+  }
+  .pitch-match-banner {
+    padding: 0.5rem 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+  .pbt-name {
+    font-size: 0.84rem !important;
+    max-width: 90px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .pbt-formation {
+    font-size: 0.7rem !important;
+    padding: 0.15rem 0.4rem !important;
+  }
+  .pbt-vs-badge {
+    font-size: 0.65rem !important;
+    padding: 0.15rem 0.45rem !important;
+  }
+  .pitch-btn-label {
+    max-width: 65px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .tactical-pitch {
+    height: 560px;
   }
   .pitch-shirt {
-    width: 30px;
-    height: 30px;
-    font-size: 0.74rem;
+    width: 25px;
+    height: 25px;
+  }
+  .pitch-jersey-num {
+    font-size: 0.66rem;
   }
   .pitch-name {
-    font-size: 0.62rem;
-    max-width: 75px;
+    font-size: 0.55rem;
+    max-width: 50px;
+    padding: 0px 3px;
+  }
+  .lineup-tab-btn,
+  .pitch-team-btn {
+    padding: 0.32rem 0.55rem;
+    font-size: 0.75rem;
   }
 }
 

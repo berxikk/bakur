@@ -39,7 +39,7 @@
   <!-- Cropper.js Görsel Kırpma Kütüphanesi -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
-  <link rel="stylesheet" href="/styles.css?v=39" />
+  <link rel="stylesheet" href="/styles.css?v=40" />
 </head>
 <body style="background-color: #0C1014 !important; color: #f8fafc;">
   <div class="app-shell" id="appShell">
@@ -304,13 +304,13 @@
         <div id="fixturesCalendarView">
           <!-- 7 Gün Başlığı (Pzt - Paz) -->
           <div class="calendar-weekdays" id="calendarWeekdays">
-            <div>Pazartesi</div>
-            <div>Salı</div>
-            <div>Çarşamba</div>
-            <div>Perşembe</div>
-            <div>Cuma</div>
-            <div>Cumartesi</div>
-            <div>Pazar</div>
+            <div title="Pazartesi"><span class="wd-full">Pazartesi</span><span class="wd-short">Pzt</span></div>
+            <div title="Salı"><span class="wd-full">Salı</span><span class="wd-short">Sal</span></div>
+            <div title="Çarşamba"><span class="wd-full">Çarşamba</span><span class="wd-short">Çar</span></div>
+            <div title="Perşembe"><span class="wd-full">Perşembe</span><span class="wd-short">Per</span></div>
+            <div title="Cuma"><span class="wd-full">Cuma</span><span class="wd-short">Cum</span></div>
+            <div title="Cumartesi"><span class="wd-full">Cumartesi</span><span class="wd-short">Cts</span></div>
+            <div title="Pazar"><span class="wd-full">Pazar</span><span class="wd-short">Paz</span></div>
           </div>
 
           <!-- Takvim Gün Hücreleri -->
@@ -341,7 +341,7 @@
 
         <!-- LİSTE GÖRÜNÜMÜ (İsteğe Bağlı Geçiş) -->
         <div id="fixturesListView" style="display: none;">
-          <div style="padding: 0.85rem 1.35rem; background: var(--bg-page); border-bottom: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div class="fixture-list-filter-bar">
             <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-secondary);" data-i18n="allSeasonMatches">Sezonun Tüm Karşılaşmaları</span>
             <div class="filter-group" id="fixtureFilterGroup">
               <button class="filter-btn active" data-filter="all">
@@ -652,8 +652,8 @@
   </div> <!-- /#followsModal -->
 
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-  <script src="/i18n.js?v=39"></script>
-  <script src="/app.js?v=39"></script>
-  <script type="module" src="/community.js?v=39"></script>
+  <script src="/i18n.js?v=40"></script>
+  <script src="/app.js?v=40"></script>
+  <script type="module" src="/community.js?v=40"></script>
 </body>
 </html>

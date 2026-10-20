@@ -124,6 +124,18 @@ function trHomeAway(pm) {
   return isHome ? pair[0] : pair[1];
 }
 
+function getShortWeekday(d, idx) {
+  const customShortTR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts', 'Paz'];
+  const customShortKU = ['Duş', 'Sêş', 'Çar', 'Pên', 'În', 'Şem', 'Yek'];
+  const customShortEN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const customShortDE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+  const lang = appState.lang || 'tr';
+  if (lang === 'ku') return customShortKU[idx] || (d ? d.substring(0, 3) : '');
+  if (lang === 'en') return customShortEN[idx] || (d ? d.substring(0, 3) : '');
+  if (lang === 'de') return customShortDE[idx] || (d ? d.substring(0, 2) : '');
+  return customShortTR[idx] || (d ? d.substring(0, 3) : '');
+}
+
 function setLanguage(lang) {
   const root = (typeof window !== 'undefined' && window.I18N) ? window.I18N : (typeof I18N !== 'undefined' ? I18N : {});
   if (!root[lang]) return;
@@ -172,7 +184,9 @@ function setLanguage(lang) {
   const weekdaysEl = document.getElementById('calendarWeekdays');
   if (weekdaysEl) {
     const days = t('weekdays');
-    weekdaysEl.innerHTML = Array.isArray(days) ? days.map((d) => `<div>${d}</div>`).join('') : '';
+    weekdaysEl.innerHTML = Array.isArray(days)
+      ? days.map((d, idx) => `<div title="${d}"><span class="wd-full">${d}</span><span class="wd-short">${getShortWeekday(d, idx)}</span></div>`).join('')
+      : '';
   }
 
   // 6. Tema buton metni
@@ -1193,8 +1207,8 @@ function renderFixturesCalendar() {
       mobileListEl.innerHTML = monthMatches.map((m) => {
         const isHome = String(m.homeTeam.id) === AMED_ID;
         const opp = isHome ? m.awayTeam : m.homeTeam;
-        const oppLogo = opp.logo || getTeamLogo(opp.id);
-        const amedLogo = getTeamLogo(AMED_ID);
+        const homeLogo = m.homeTeam?.logo || getTeamLogo(m.homeTeam?.id);
+        const awayLogo = m.awayTeam?.logo || getTeamLogo(m.awayTeam?.id);
         const isFinished = m.status?.type === 'finished';
         const isLive = m.status?.type === 'inprogress';
         const clickTab = isFinished || isLive ? 'summary' : 'previous';
@@ -1215,22 +1229,29 @@ function renderFixturesCalendar() {
         }
 
         const dateStr = formatDateTR(m.startTimestamp);
+        const roundText = m.roundInfo?.round ? `${m.roundInfo.round}. ${t('roundWord') || 'Hafta'}` : t('superLig');
 
         return `
           <div class="cal-mobile-match-card" onclick="openMatchModal('${m.id}', '${clickTab}')">
-            <div class="cal-mobile-match-left">
-              <span class="cal-mobile-match-date"><i class="ri-calendar-line"></i> ${dateStr} · ${m.roundInfo?.round ? `${m.roundInfo.round}. ${t('matchweekWord') || 'Hafta'}` : 'Süper Lig'}</span>
-              <div class="cal-mobile-match-teams">
-                <img src="${isHome ? amedLogo : oppLogo}" alt="" />
-                <span>${isHome ? 'Amedspor' : opp.name}</span>
-                <span style="color:var(--text-muted);font-size:0.75rem;">vs</span>
-                <img src="${isHome ? oppLogo : amedLogo}" alt="" />
-                <span>${isHome ? opp.name : 'Amedspor'}</span>
-              </div>
+            <div class="cal-mobile-match-top-row">
+              <span class="cal-mobile-match-date"><i class="ri-calendar-line"></i> ${dateStr}</span>
+              <span class="cal-mobile-match-round">${roundText}</span>
             </div>
-            <div class="cal-mobile-match-right">
-              <span class="cal-mobile-match-badge ${badgeClass}">${badgeText}</span>
-              <i class="ri-arrow-right-s-line" style="color:var(--text-muted);"></i>
+            <div class="cal-mobile-match-main">
+              <div class="cal-mobile-teams-col">
+                <div class="cal-mobile-team-line ${isHome ? 'is-amed' : ''}">
+                  <img src="${homeLogo}" alt="" loading="lazy" />
+                  <span class="cal-mobile-team-name">${m.homeTeam?.name || 'Ev Sahibi'}</span>
+                </div>
+                <div class="cal-mobile-team-line ${!isHome ? 'is-amed' : ''}">
+                  <img src="${awayLogo}" alt="" loading="lazy" />
+                  <span class="cal-mobile-team-name">${m.awayTeam?.name || 'Deplasman'}</span>
+                </div>
+              </div>
+              <div class="cal-mobile-score-col">
+                <span class="cal-mobile-match-badge ${badgeClass}">${badgeText}</span>
+                <i class="ri-arrow-right-s-line cal-mobile-arrow"></i>
+              </div>
             </div>
           </div>
         `;
@@ -1315,7 +1336,7 @@ function getTacticalStarterCoords(starters, formationStr, isTopHalf = false, isS
   const result = [];
 
   // Kaleci Konumu
-  const gkY = isSingleTeam ? 93 : (isTopHalf ? 7 : 93);
+  const gkY = isSingleTeam ? 92 : (isTopHalf ? 6 : 94);
   result.push({ player: lines[0][0], x: 50, y: gkY });
 
   // Hat Oyuncuları Konumu
@@ -1325,27 +1346,27 @@ function getTacticalStarterCoords(starters, formationStr, isTopHalf = false, isS
     let yPct = 50;
 
     if (isSingleTeam) {
-      const step = 78 / Math.max(1, numOutfieldLines);
-      yPct = Math.round(93 - (lIdx * step));
+      const step = 76 / Math.max(1, numOutfieldLines);
+      yPct = Math.round(92 - (lIdx * step));
     } else if (isTopHalf) {
-      // Deplasman (Üst Yarı): Defans %19'da, Forvet %46'da
-      const step = 27 / Math.max(1, numOutfieldLines - 1);
-      yPct = Math.round(19 + ((lIdx - 1) * step));
+      // Deplasman (Üst Yarı): Defans %16'da, Forvet en fazla %39'da (Orta saha ferah)
+      const step = (numOutfieldLines > 1) ? (23 / (numOutfieldLines - 1)) : 0;
+      yPct = Math.round(16 + ((lIdx - 1) * step));
     } else {
-      // Ev Sahibi (Alt Yarı): Defans %81'de, Forvet %54'te
-      const step = 27 / Math.max(1, numOutfieldLines - 1);
-      yPct = Math.round(81 - ((lIdx - 1) * step));
+      // Ev Sahibi (Alt Yarı): Defans %84'te, Forvet en fazla %61'de (Orta saha ferah)
+      const step = (numOutfieldLines > 1) ? (23 / (numOutfieldLines - 1)) : 0;
+      yPct = Math.round(84 - ((lIdx - 1) * step));
     }
 
     linePlayers.forEach((p, pIdx) => {
       let xPct = 50;
       if (n === 1) xPct = 50;
-      else if (n === 2) xPct = pIdx === 0 ? 35 : 65;
-      else if (n === 3) xPct = pIdx === 0 ? 22 : (pIdx === 1 ? 50 : 78);
-      else if (n === 4) xPct = pIdx === 0 ? 16 : (pIdx === 1 ? 38 : (pIdx === 2 ? 62 : 84));
-      else if (n === 5) xPct = pIdx === 0 ? 14 : (pIdx === 1 ? 32 : (pIdx === 2 ? 50 : (pIdx === 3 ? 68 : 86)));
+      else if (n === 2) xPct = pIdx === 0 ? 34 : 66;
+      else if (n === 3) xPct = pIdx === 0 ? 20 : (pIdx === 1 ? 50 : 80);
+      else if (n === 4) xPct = pIdx === 0 ? 14 : (pIdx === 1 ? 38 : (pIdx === 2 ? 62 : 86));
+      else if (n === 5) xPct = pIdx === 0 ? 12 : (pIdx === 1 ? 31 : (pIdx === 2 ? 50 : (pIdx === 3 ? 69 : 88)));
       else {
-        const margin = 14;
+        const margin = 12;
         xPct = Math.round(margin + ((pIdx + 0.5) / n) * (100 - margin * 2));
       }
       result.push({ player: p, x: xPct, y: yPct });
@@ -1360,35 +1381,50 @@ function renderPitchPlayerPin(item, teamType, intel) {
   const p = item.player;
   const pos = (p.position || '').toUpperCase();
   const isGk = pos === 'G' || pos === 'GK';
-  const name = p.shortName || p.name || 'Oyuncu';
-  const jersey = p.jersey || '—';
-  const isMotm = p.id && String(p.id) === String(intel?.motm?.id);
-  const ratingCls = (p.rating || 0) >= 7.6 ? 'high' : (p.rating || 0) >= 6.8 ? 'med' : 'low';
 
-  const ratingBadge = p.rating
-    ? `<span class="pitch-rating-tag ${ratingCls}">${isMotm ? '⭐ ' : ''}${p.rating}</span>`
+  // Düzenli ve taşmayan kısa isim (Soyadı veya kısa ad)
+  let displayName = p.shortName;
+  if (!displayName) {
+    const raw = (p.name || '').trim();
+    if (raw) {
+      const parts = raw.split(/\s+/);
+      displayName = parts.length > 1 ? parts[parts.length - 1] : raw;
+    } else {
+      displayName = 'Oyuncu';
+    }
+  }
+
+  const jersey = p.jersey || p.jerseyNumber || '—';
+  const isMotm = p.id && String(p.id) === String(intel?.motm?.id);
+  const ratingVal = p.rating ? Number(p.rating) : null;
+  const ratingCls = ratingVal >= 7.6 ? 'high' : ratingVal >= 6.8 ? 'med' : 'low';
+
+  const ratingBadge = ratingVal
+    ? `<span class="pitch-rating-tag ${ratingCls}">${isMotm ? '★ ' : ''}${ratingVal.toFixed(1)}</span>`
     : '';
 
   const events = [];
   (p.plays || []).forEach((pl) => {
     if (pl.goal) events.push('<span class="pitch-event-icon" title="Gol">⚽</span>');
-    if (pl.yellow) events.push('<span class="pitch-event-icon" title="Sarı Kart">🟨</span>');
-    if (pl.red) events.push('<span class="pitch-event-icon" title="Kırmızı Kart">🟥</span>');
-    if (pl.sub) events.push('<span class="pitch-event-icon" title="Oyundan Çıktı">🔄</span>');
+    if (pl.yellow) events.push('<span class="pitch-event-icon yellow" title="Sarı Kart">🟨</span>');
+    if (pl.red) events.push('<span class="pitch-event-icon red" title="Kırmızı Kart">🟥</span>');
+    if (pl.sub) events.push('<span class="pitch-event-icon sub" title="Oyundan Çıktı">🔄</span>');
   });
 
   const eventHtml = events.length > 0
-    ? `<div class="pitch-events-strip">${events.join('')}</div>`
+    ? `<div class="pitch-events-strip">${events.slice(0, 2).join('')}</div>`
     : '';
 
+  const fullTitle = `${p.name || displayName} (#${jersey}) - ${p.position || ''}${ratingVal ? ` | Puan: ${ratingVal.toFixed(1)}` : ''}`;
+
   return `
-    <div class="pitch-player-pin" style="top:${item.y}%; left:${item.x}%;" title="${p.name} (#${jersey}) - ${p.position || ''}">
+    <div class="pitch-player-pin" style="top:${item.y}%; left:${item.x}%;" title="${fullTitle}">
       <div class="pitch-shirt ${teamType} ${isGk ? 'gk' : ''}">
-        ${jersey}
+        <span class="pitch-jersey-num">${jersey}</span>
         ${ratingBadge}
         ${eventHtml}
       </div>
-      <div class="pitch-name">${name}</div>
+      <div class="pitch-name">${displayName}</div>
     </div>
   `;
 }
@@ -2683,10 +2719,10 @@ function renderModalBody() {
               <i class="ri-swap-line"></i> <span>${t('fullPitch')}</span>
             </button>
             <button type="button" class="pitch-team-btn ${pitchTeamMode === 'home' ? 'active' : ''}" onclick="window.setPitchTeamMode('home')" title="${t('onlyHomeTitle')}">
-              <span class="pitch-team-dot home"></span> <span>${lu.home?.teamName || t('homeTeamSub')}</span>
+              <span class="pitch-team-dot home"></span> <span class="pitch-btn-label">${lu.home?.teamName || t('homeTeamSub')}</span>
             </button>
             <button type="button" class="pitch-team-btn ${pitchTeamMode === 'away' ? 'active' : ''}" onclick="window.setPitchTeamMode('away')" title="${t('onlyAwayTitle')}">
-              <span class="pitch-team-dot away"></span> <span>${lu.away?.teamName || t('awayTeamSub')}</span>
+              <span class="pitch-team-dot away"></span> <span class="pitch-btn-label">${lu.away?.teamName || t('awayTeamSub')}</span>
             </button>
           </div>
         ` : ''}
