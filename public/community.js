@@ -99,6 +99,10 @@ function ago(ts) {
 function sanitizeImageUrl(url) {
   if (!url) return null;
   const str = String(url).trim();
+  // Base64 Data URI (Avatar ve kompakt resimler için doğrudan ve kalıcı veritabanı depolama)
+  if (/^data:image\/(webp|jpeg|jpg|png|gif);base64,[A-Za-z0-9+/=]+$/i.test(str)) {
+    return str;
+  }
   if (str.startsWith('/logos/')) {
     if (str.includes('..') || str.includes('\\')) return null;
     if (!/^\/logos\/[0-9a-zA-Z._-]+\.png$/i.test(str)) return null;
@@ -110,7 +114,7 @@ function sanitizeImageUrl(url) {
     return str;
   }
   // Güvenli harici ve yerel domain görsel URL'leri
-  if (/^https?:\/\/([a-zA-Z0-9.-]+\.)?(bakur\.onread\.com|localhost|127\.0\.0\.1|supabase\.co|imgur\.com|freeimage\.host|catbox\.moe|flagcdn\.com)(:\d+)?\/[^\s<>"']+/i.test(str)) {
+  if (/^https?:\/\/([a-zA-Z0-9.-]+\.)?(bakur\.onread\.com|localhost|127\.0\.0\.1|supabase\.co|imgur\.com|freeimage\.host|catbox\.moe|flagcdn\.com|ibb\.co|postimg\.cc|cloudinary\.com)(:\d+)?\/[^\s<>"']+/i.test(str)) {
     return str;
   }
   if (/^https:\/\/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\/[^\s<>"']*\.(png|jpg|jpeg|webp|gif)(\?[^\s<>"']*)?$/i.test(str)) {
@@ -1337,13 +1341,27 @@ function showCropDialog(dataUri, type = 'avatar') {
           return resolve(dataUri);
         }
         try {
+          const isAvatar = type === 'avatar';
           const canvas = currentCropper.getCroppedCanvas({
-            width: type === 'avatar' ? 400 : 1200,
-            height: type === 'avatar' ? 400 : 400,
+            width: isAvatar ? 192 : 1200,
+            height: isAvatar ? 192 : 400,
             imageSmoothingEnabled: true,
             imageSmoothingQuality: 'high'
           });
-          const croppedData = canvas ? canvas.toDataURL('image/jpeg', 0.92) : dataUri;
+          let croppedData = '';
+          if (canvas) {
+            try {
+              // Avatarlar için süper optimize WebP (10-15KB), desteklenmeyen tarayıcılar için JPEG
+              croppedData = canvas.toDataURL(isAvatar ? 'image/webp' : 'image/jpeg', isAvatar ? 0.82 : 0.90);
+              if (isAvatar && !croppedData.startsWith('data:image/webp')) {
+                croppedData = canvas.toDataURL('image/jpeg', 0.82);
+              }
+            } catch (_) {
+              croppedData = canvas.toDataURL('image/jpeg', 0.85);
+            }
+          } else {
+            croppedData = dataUri;
+          }
           cleanup();
           resolve(croppedData);
         } catch (e) {
@@ -1487,7 +1505,8 @@ function initPageAvatarUploader() {
         if (url) {
           if (inp) inp.value = url;
           if (preview) {
-            preview.innerHTML = `<img class="c-avatar" style="width:64px;height:64px;border:2px solid var(--amed-green);object-fit:cover;" src="${esc(url)}?t=${Date.now()}" alt="Avatar" />`;
+            const safeSrc = url.startsWith('data:') ? url : `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+            preview.innerHTML = `<img class="c-avatar" style="width:64px;height:64px;border:2px solid var(--amed-green);object-fit:cover;" src="${esc(safeSrc)}" alt="Avatar" />`;
           }
           if (removeBtn) removeBtn.style.display = 'inline-flex';
 

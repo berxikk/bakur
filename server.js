@@ -2042,12 +2042,13 @@ async function checkOnlineNSFW(buffer, ext) {
   }
 }
 
-// Harici Online Resim Barındırma Servisi (Catbox.moe - Kalıcı ve Ücretsiz Doğrudan Resim Linki)
+// Harici Online Resim Barındırma Servisi (Catbox.moe & Imgur - Kalıcı ve Ücretsiz Doğrudan Resim Linkleri)
 async function uploadToExternalImageHost(buffer, ext) {
   const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
   const mime = mimeMap[ext] || 'image/jpeg';
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  // 1. Birincil Harici Hosting: Catbox.moe
+  for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const filename = `amed_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext}`;
       const fd = new FormData();
@@ -2057,8 +2058,11 @@ async function uploadToExternalImageHost(buffer, ext) {
 
       const res = await fetch('https://catbox.moe/user/api.php', {
         method: 'POST',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
         body: fd,
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(10000)
       });
 
       if (res.ok) {
@@ -2072,10 +2076,33 @@ async function uploadToExternalImageHost(buffer, ext) {
     } catch (err) {
       console.warn(`[Upload] Harici hosting (Catbox) deneme #${attempt} hatası:`, err.message);
     }
-    if (attempt < 3) {
-      await new Promise(r => setTimeout(r, 1200));
+    if (attempt < 2) {
+      await new Promise(r => setTimeout(r, 800));
     }
   }
+
+  // 2. İkincil Harici Hosting: Imgur API
+  try {
+    const fdImgur = new FormData();
+    fdImgur.append('image', buffer.toString('base64'));
+    fdImgur.append('type', 'base64');
+    const resImgur = await fetch('https://api.imgur.com/3/image', {
+      method: 'POST',
+      headers: { 'Authorization': 'Client-ID 546c25a59c58ad7' },
+      body: fdImgur,
+      signal: AbortSignal.timeout(8000)
+    });
+    if (resImgur.ok) {
+      const dataImgur = await resImgur.json();
+      if (dataImgur?.success && dataImgur?.data?.link) {
+        console.log('[Upload] Imgur harici yükleme başarılı:', dataImgur.data.link);
+        return dataImgur.data.link;
+      }
+    }
+  } catch (err) {
+    console.warn('[Upload] Imgur harici yükleme hatası:', err.message);
+  }
+
   return null;
 }
 
@@ -2163,45 +2190,54 @@ async function uploadToExternalImageHost(buffer, ext) {
       const destPath = path.resolve(uploadsDir, filename);
       fs.writeFileSync(destPath, buffer);
 
-      // 1. Harici Online Resim Barındırma Servisine Yükle (Catbox.moe - Doğrudan ve Kalıcı Dış Link)
-      const externalUrl = await uploadToExternalImageHost(buffer, ext);
+      let finalUrl = null;
+      let source = 'local';
 
-      // 2. Yedek olarak Supabase Cloud Storage'a da yükle (Dış servisin kesintiye uğraması durumunda kesintisiz süreklilik)
-      const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
-      const remoteFolder = isAvatar ? 'avatars' : 'posts';
-      const remotePath = `${remoteFolder}/${filename}`;
-      let cloudFallbackUrl = null;
+      if (isAvatar) {
+        // AVATARLAR İÇİN KALICI ÇÖZÜM:
+        // Render/Heroku gibi platformlar her GitHub güncellemesinde (push/deploy) konteyner diskini sıfırlar.
+        // Bu yüzden yerel diskteki (/uploads/avatars/...) dosyalar silinip 404 oluyordu.
+        // Avatarlar istemcide (Cropper) 192x192 WebP/JPEG olarak optimize edildiği için (~8-15KB),
+        // doğrudan veritabanında (profiles.avatar_url) Base64 Data URI olarak saklanır.
+        // Böylece GitHub deployment'ları, sunucu yeniden başlatmaları veya harici CDN arızaları
+        // profil resimlerini ASLA silemez, %100 kalıcıdır!
+        finalUrl = dataUri;
+        source = 'persistent_data_uri';
+      } else {
+        // Gönderi görselleri için harici CDN (Catbox / Imgur) veya Supabase Cloud Storage
+        const externalUrl = await uploadToExternalImageHost(buffer, ext);
+        let cloudFallbackUrl = null;
 
-      try {
-        const sbUploadRes = await fetch(`${SUPABASE_STORAGE_URL}/storage/v1/object/uploads/${remotePath}`, {
-          method: 'POST',
-          headers: {
-            'apikey': SUPABASE_STORAGE_KEY,
-            'Authorization': `Bearer ${SUPABASE_STORAGE_KEY}`,
-            'Content-Type': mimeMap[ext] || 'image/jpeg',
-            'x-upsert': 'true'
-          },
-          body: buffer
-        });
-        if (sbUploadRes.ok) {
-          cloudFallbackUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/uploads/${remotePath}`;
-        } else {
-          const errTxt = await sbUploadRes.text();
-          console.warn('Supabase Storage yedek upload uyarısı:', sbUploadRes.status, errTxt);
+        if (!externalUrl) {
+          const mimeMap = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
+          const remotePath = `posts/${filename}`;
+          try {
+            const sbUploadRes = await fetch(`${SUPABASE_STORAGE_URL}/storage/v1/object/uploads/${remotePath}`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_STORAGE_KEY,
+                'Authorization': `Bearer ${SUPABASE_STORAGE_KEY}`,
+                'Content-Type': mimeMap[ext] || 'image/jpeg',
+                'x-upsert': 'true'
+              },
+              body: buffer
+            });
+            if (sbUploadRes.ok) {
+              cloudFallbackUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/uploads/${remotePath}`;
+            }
+          } catch (_) {}
         }
-      } catch (sbErr) {
-        console.warn('Supabase Storage network error:', sbErr.message);
-      }
 
-      // Öncelik harici hosting doğrudan bağlantısındadır (örneğin: https://files.catbox.moe/xxxxxx.jpg)
-      const finalUrl = externalUrl || cloudFallbackUrl || (isAvatar ? `/uploads/avatars/${filename}` : `/uploads/${filename}`);
+        finalUrl = externalUrl || cloudFallbackUrl || `/uploads/${filename}`;
+        source = externalUrl ? 'external_cdn' : (cloudFallbackUrl ? 'supabase_cloud' : 'local_disk');
+      }
 
       return sendJson(res, {
         ok: true,
         url: finalUrl,
         avatarUrl: finalUrl,
         bannerUrl: finalUrl,
-        source: externalUrl ? 'external_catbox' : 'supabase_cloud'
+        source
       });
     } catch (err) {
       console.error('Image upload failed:', err);
