@@ -1248,17 +1248,28 @@ let currentCropper = null;
 function showCropDialog(dataUri, type = 'avatar') {
   return new Promise((resolve, reject) => {
     const modal = $('cropModal');
+    const modalBox = modal?.querySelector('.crop-modal-box');
     const titleEl = $('cropModalTitle');
     const btnConfirm = $('btnCropConfirm');
     const btnCancel = $('btnCancelCrop');
     const btnDismiss = $('btnCropDismiss');
     const btnZoomIn = $('cropBtnZoomIn');
     const btnZoomOut = $('cropBtnZoomOut');
+    const btnRotateLeft = $('cropBtnRotateLeft');
     const btnRotate = $('cropBtnRotate');
+    const btnFlip = $('cropBtnFlip');
     const btnReset = $('cropBtnReset');
 
     if (!modal) {
       return resolve(dataUri);
+    }
+
+    if (modalBox) {
+      if (type === 'avatar') {
+        modalBox.classList.add('is-avatar-crop');
+      } else {
+        modalBox.classList.remove('is-avatar-crop');
+      }
     }
 
     if (titleEl) {
@@ -1280,6 +1291,8 @@ function showCropDialog(dataUri, type = 'avatar') {
     // Modalı görünür kıl (opacity ve display)
     modal.style.display = 'flex';
     modal.classList.add('open');
+
+    let currentScaleX = 1;
 
     const onOutsideClick = (e) => {
       if (e.target === modal) {
@@ -1306,12 +1319,18 @@ function showCropDialog(dataUri, type = 'avatar') {
         try { currentCropper.destroy(); } catch (e) {}
         currentCropper = null;
       }
-      if (btnConfirm) btnConfirm.onclick = null;
+      if (btnConfirm) {
+        btnConfirm.onclick = null;
+        btnConfirm.disabled = false;
+        btnConfirm.innerHTML = `<i class="ri-check-line"></i> <span>${T('cropConfirm')}</span>`;
+      }
       if (btnCancel) btnCancel.onclick = null;
       if (btnDismiss) btnDismiss.onclick = null;
       if (btnZoomIn) btnZoomIn.onclick = null;
       if (btnZoomOut) btnZoomOut.onclick = null;
+      if (btnRotateLeft) btnRotateLeft.onclick = null;
       if (btnRotate) btnRotate.onclick = null;
+      if (btnFlip) btnFlip.onclick = null;
       if (btnReset) btnReset.onclick = null;
     };
 
@@ -1331,10 +1350,23 @@ function showCropDialog(dataUri, type = 'avatar') {
 
     if (btnZoomIn) btnZoomIn.onclick = () => currentCropper?.zoom(0.1);
     if (btnZoomOut) btnZoomOut.onclick = () => currentCropper?.zoom(-0.1);
+    if (btnRotateLeft) btnRotateLeft.onclick = () => currentCropper?.rotate(-90);
     if (btnRotate) btnRotate.onclick = () => currentCropper?.rotate(90);
-    if (btnReset) btnReset.onclick = () => currentCropper?.reset();
+    if (btnFlip) {
+      btnFlip.onclick = () => {
+        currentScaleX = -currentScaleX;
+        currentCropper?.scaleX(currentScaleX);
+      };
+    }
+    if (btnReset) {
+      btnReset.onclick = () => {
+        currentScaleX = 1;
+        currentCropper?.reset();
+      };
+    }
 
     if (btnConfirm) {
+      btnConfirm.innerHTML = `<i class="ri-check-line"></i> <span>${T('cropConfirm')}</span>`;
       btnConfirm.onclick = () => {
         if (!currentCropper) {
           cleanup();
@@ -1342,22 +1374,26 @@ function showCropDialog(dataUri, type = 'avatar') {
         }
         try {
           const isAvatar = type === 'avatar';
+          btnConfirm.disabled = true;
+          btnConfirm.innerHTML = `<i class="ri-loader-4-line spin"></i> <span>${T('loading')}</span>`;
+
+          // Kullanıcının ayarladığı görselin boyutunu kompakt ve süper optimize hale getir (160x160 px, ~6-10KB)
           const canvas = currentCropper.getCroppedCanvas({
-            width: isAvatar ? 192 : 1200,
-            height: isAvatar ? 192 : 400,
+            width: isAvatar ? 160 : 1200,
+            height: isAvatar ? 160 : 400,
             imageSmoothingEnabled: true,
             imageSmoothingQuality: 'high'
           });
           let croppedData = '';
           if (canvas) {
             try {
-              // Avatarlar için süper optimize WebP (10-15KB), desteklenmeyen tarayıcılar için JPEG
-              croppedData = canvas.toDataURL(isAvatar ? 'image/webp' : 'image/jpeg', isAvatar ? 0.82 : 0.90);
+              // WebP formatı ile ultra küçük dosya boyutu (doğrudan Supabase veritabanında saklanır)
+              croppedData = canvas.toDataURL(isAvatar ? 'image/webp' : 'image/jpeg', isAvatar ? 0.80 : 0.88);
               if (isAvatar && !croppedData.startsWith('data:image/webp')) {
-                croppedData = canvas.toDataURL('image/jpeg', 0.82);
+                croppedData = canvas.toDataURL('image/jpeg', 0.80);
               }
             } catch (_) {
-              croppedData = canvas.toDataURL('image/jpeg', 0.85);
+              croppedData = canvas.toDataURL('image/jpeg', 0.80);
             }
           } else {
             croppedData = dataUri;

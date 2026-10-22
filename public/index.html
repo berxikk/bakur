@@ -604,27 +604,32 @@
     </div>
   </div>
 
-  <!-- Resim Kırpma Modalı (Avatar ve Banner Kırpıcı) -->
+  <!-- Resim Kırpma Modalı (Avatar ve Görsel Kırpıcı) -->
   <div class="c-backdrop" id="cropModal" style="display:none; z-index:9999;">
-    <div class="crop-modal-box">
+    <div class="crop-modal-box is-avatar-crop">
       <div class="crop-modal-header">
-        <div class="crop-modal-title"><i class="ri-crop-2-line"></i> <span id="cropModalTitle" data-i18n="cropAndSet">Görseli Kırp ve Ayarla</span></div>
+        <div class="crop-modal-title"><i class="ri-crop-2-line"></i> <span id="cropModalTitle" data-i18n="cropTitle">Fotoğrafı Düzenle & Kırp</span></div>
         <button type="button" class="btn-close" id="btnCancelCrop" title="İptal"><i class="ri-close-line"></i></button>
       </div>
       <div class="crop-modal-body">
+        <div class="crop-hint-banner">
+          <i class="ri-information-line"></i> <span data-i18n="cropHint">Fotoğrafı sürükleyerek çerçeveye yerleştirin, yakınlaştırıp döndürebilirsiniz.</span>
+        </div>
         <div class="crop-container">
           <img id="cropImageTarget" src="" alt="Kırpılacak Görsel" />
         </div>
         <div class="crop-toolbar">
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomIn" title="Yakınlaştır"><i class="ri-zoom-in-line"></i> <span data-i18n="zoomIn">Yakınlaştır</span></button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomOut" title="Uzaklaştır"><i class="ri-zoom-out-line"></i> <span data-i18n="zoomOut">Uzaklaştır</span></button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnRotate" title="Döndür"><i class="ri-refresh-line"></i> <span data-i18n="rotate">Döndür</span></button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnReset" title="Sıfırla"><i class="ri-aspect-ratio-line"></i> <span data-i18n="resetBtn">Sıfırla</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomIn" title="Yakınlaştır"><i class="ri-zoom-in-line"></i> <span data-i18n="cropZoomIn">Yakınlaştır</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomOut" title="Uzaklaştır"><i class="ri-zoom-out-line"></i> <span data-i18n="cropZoomOut">Uzaklaştır</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnRotateLeft" title="Sola Döndür"><i class="ri-anticlockwise-line"></i> <span data-i18n="cropRotateLeft">Sola Döndür</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnRotate" title="Sağa Döndür"><i class="ri-clockwise-line"></i> <span data-i18n="cropRotateRight">Sağa Döndür</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnFlip" title="Yatay Çevir"><i class="ri-arrow-left-right-line"></i> <span data-i18n="cropFlip">Çevir</span></button>
+          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnReset" title="Sıfırla"><i class="ri-refresh-line"></i> <span data-i18n="cropReset">Sıfırla</span></button>
         </div>
       </div>
       <div class="crop-modal-footer">
-        <button type="button" class="c-btn c-btn-ghost" id="btnCropDismiss" data-i18n="cancel">Vazgeç</button>
-        <button type="button" class="c-btn c-btn-primary" id="btnCropConfirm"><i class="ri-check-line"></i> <span data-i18n="cropConfirm">Kırp ve Onayla</span></button>
+        <button type="button" class="c-btn c-btn-ghost" id="btnCropDismiss" data-i18n="cropCancel">Vazgeç</button>
+        <button type="button" class="c-btn c-btn-primary" id="btnCropConfirm"><i class="ri-check-line"></i> <span data-i18n="cropConfirm">Boyutu Küçült ve Yükle</span></button>
       </div>
     </div>
   </div> <!-- /#cropModal -->

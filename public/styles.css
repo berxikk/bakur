@@ -7934,6 +7934,25 @@ article.tweet-card.is-pinned {
   background: #0b1118;
 }
 
+.crop-hint-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.crop-hint-banner i {
+  color: var(--amed-green);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
 .crop-container {
   width: 100%;
   height: 360px;
@@ -7942,6 +7961,17 @@ article.tweet-card.is-pinned {
   overflow: hidden;
   background: #020617;
   border-radius: 12px;
+}
+
+/* Avatar Kırpma Çemberi (Kullanıcı profilde nasıl görüneceğini anında görür) */
+.crop-modal-box.is-avatar-crop .cropper-view-box,
+.crop-modal-box.is-avatar-crop .cropper-face {
+  border-radius: 50% !important;
+}
+
+.crop-modal-box.is-avatar-crop .cropper-view-box {
+  outline: 2px solid var(--amed-green) !important;
+  box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.45);
 }
 
 .crop-container img {
