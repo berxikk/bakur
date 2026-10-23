@@ -36,9 +36,6 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <!-- Remix Icon Vektör İkon Kütüphanesi -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
-  <!-- Cropper.js Görsel Kırpma Kütüphanesi -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
   <link rel="stylesheet" href="/styles.css?v=41" />
 </head>
 <body style="background-color: #0C1014 !important; color: #f8fafc;">
@@ -76,9 +73,6 @@
         </button>
         <button class="nav-tab" data-tab="superlig">
           <i class="ri-football-line"></i> <span data-i18n="navMatchweek">Haftanın Maçları</span>
-        </button>
-        <button class="nav-tab" data-tab="forum">
-          <i class="ri-chat-3-line"></i> <span data-i18n="navPosts">Gönderiler</span>
         </button>
         <button class="nav-tab" data-tab="profile" id="navProfileTab">
           <i class="ri-user-3-line"></i> <span data-i18n="profile">Profil</span>
@@ -137,9 +131,6 @@
         </button>
         <button class="mobile-tab-pill" data-tab="superlig">
           <i class="ri-football-line"></i> <span data-i18n="navMatchweek">Haftanın Maçları</span>
-        </button>
-        <button class="mobile-tab-pill" data-tab="forum">
-          <i class="ri-chat-3-line"></i> <span data-i18n="navPosts">Gönderiler</span>
         </button>
         <button class="mobile-tab-pill" data-tab="profile" id="mobileProfileTab">
           <i class="ri-user-3-line"></i> <span data-i18n="profile">Profil</span>
@@ -508,59 +499,12 @@
       </div>
     </section>
 
-    <!-- SEKME 6: TARAFTAR GÖNDERİLERİ (TWITTER / X TIMELINE) -->
-    <section class="tab-panel" id="tab-forum">
-      <div class="tw-layout">
-        <!-- Sol / Ana Alan: Twitter Timeline Akışı & Tweet Gönderici -->
-        <main class="tw-main-feed" id="forumMain">
-          <div class="card forum-empty"><i class="ri-loader-4-line spin"></i> Yükleniyor...</div>
-        </main>
-
-        <!-- Sağ Alan: Twitter Yan Panel (Gündemler & Kimi Takip Etmeli) -->
-        <aside class="tw-sidebar">
-          <div class="tw-search-card card">
-            <i class="ri-search-line"></i>
-            <input type="search" id="forumSearch" data-i18n-ph="searchPostsPlaceholder" placeholder="Gönderilerde ve etiketlerde ara..." />
-          </div>
-
-          <!-- Gündemdekiler (Trends) -->
-          <div class="tw-sidebar-card card">
-            <div class="tw-sidebar-header">
-              <span class="tw-sidebar-title"><i class="ri-fire-fill" style="color:var(--amed-red);"></i> <span data-i18n="trendingTitle">Gündemdekiler</span></span>
-            </div>
-            <div class="tw-trends-list" id="twSidebarTrendsList">
-              <div class="tw-trend-empty" style="padding:1rem; color:var(--text-muted); font-size:0.85rem; text-align:center;">
-                <i class="ri-hashtag"></i> <span data-i18n="noTagsYet">Henüz kullanıcı etiketi yok.</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Kimi Takip Etmeli -->
-          <div class="tw-sidebar-card card">
-            <div class="tw-sidebar-header">
-              <span class="tw-sidebar-title"><i class="ri-user-star-line"></i> <span data-i18n="whoToFollow">Kimi Takip Etmeli</span></span>
-            </div>
-            <div class="tw-follow-list" id="twSidebarFollowList">
-              <div class="tw-follow-item">
-                <img src="/logos/132335.png" class="tw-follow-avatar" alt="Amedspor" />
-                <div class="tw-follow-info">
-                  <div class="tw-follow-name">Amedspor <i class="ri-verified-badge-fill verified-badge"></i></div>
-                  <div class="tw-follow-handle">@amedskofficial</div>
-                </div>
-                <a href="https://x.com/amedskofficial" target="_blank" rel="noopener noreferrer" class="tw-follow-btn" data-i18n="follow">Takip Et</a>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <!-- SEKME 7: PROFİL SAYFASI (KULLANICININ PROFİLİ VE GÖNDERİLERİ) -->
+    <!-- SEKME 6: PROFİL SAYFASI -->
     <section class="tab-panel" id="tab-profile">
       <div id="profilePageContent"></div>
     </section>
 
-    <!-- SEKME 8: AYARLAR SAYFASI (AYRI DÜZENLİ AYARLAR) -->
+    <!-- SEKME 7: AYARLAR SAYFASI -->
     <section class="tab-panel" id="tab-settings">
       <div id="settingsPageContent"></div>
     </section>
@@ -604,59 +548,6 @@
     </div>
   </div>
 
-  <!-- Resim Kırpma Modalı (Avatar ve Görsel Kırpıcı) -->
-  <div class="c-backdrop" id="cropModal" style="display:none; z-index:9999;">
-    <div class="crop-modal-box is-avatar-crop">
-      <div class="crop-modal-header">
-        <div class="crop-modal-title"><i class="ri-crop-2-line"></i> <span id="cropModalTitle" data-i18n="cropTitle">Fotoğrafı Düzenle & Kırp</span></div>
-        <button type="button" class="btn-close" id="btnCancelCrop" title="İptal"><i class="ri-close-line"></i></button>
-      </div>
-      <div class="crop-modal-body">
-        <div class="crop-hint-banner">
-          <i class="ri-information-line"></i> <span data-i18n="cropHint">Fotoğrafı sürükleyerek çerçeveye yerleştirin, yakınlaştırıp döndürebilirsiniz.</span>
-        </div>
-        <div class="crop-container">
-          <img id="cropImageTarget" src="" alt="Kırpılacak Görsel" />
-        </div>
-        <div class="crop-toolbar">
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomIn" title="Yakınlaştır"><i class="ri-zoom-in-line"></i> <span data-i18n="cropZoomIn">Yakınlaştır</span></button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnZoomOut" title="Uzaklaştır"><i class="ri-zoom-out-line"></i> <span data-i18n="cropZoomOut">Uzaklaştır</span></button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnRotateLeft" title="Sola Döndür"><i class="ri-anticlockwise-line"></i> <span data-i18n="cropRotateLeft">Sola Döndür</span></button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnRotate" title="Sağa Döndür"><i class="ri-clockwise-line"></i> <span data-i18n="cropRotateRight">Sağa Döndür</span></button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnFlip" title="Yatay Çevir"><i class="ri-arrow-left-right-line"></i> <span data-i18n="cropFlip">Çevir</span></button>
-          <button type="button" class="c-btn c-btn-ghost c-btn-sm" id="cropBtnReset" title="Sıfırla"><i class="ri-refresh-line"></i> <span data-i18n="cropReset">Sıfırla</span></button>
-        </div>
-      </div>
-      <div class="crop-modal-footer">
-        <button type="button" class="c-btn c-btn-ghost" id="btnCropDismiss" data-i18n="cropCancel">Vazgeç</button>
-        <button type="button" class="c-btn c-btn-primary" id="btnCropConfirm"><i class="ri-check-line"></i> <span data-i18n="cropConfirm">Boyutu Küçült ve Yükle</span></button>
-      </div>
-    </div>
-  </div> <!-- /#cropModal -->
-
-  <!-- Takipçi & Takip Edilenler Listesi Modalı -->
-  <div class="c-backdrop" id="followsModal" style="display:none; z-index:9999;">
-    <div class="follows-modal-box">
-      <div class="follows-modal-header">
-        <div class="follows-tabs-nav">
-          <button type="button" class="follows-tab-btn active" id="followsTabFollowers" data-action="switch-follows-tab" data-tab="followers">
-            <i class="ri-group-line"></i> <span data-i18n="followers">Takipçiler</span> <span class="follows-tab-count" id="followsTabFollowersCount">(0)</span>
-          </button>
-          <button type="button" class="follows-tab-btn" id="followsTabFollowing" data-action="switch-follows-tab" data-tab="following">
-            <i class="ri-user-follow-line"></i> <span data-i18n="following">Takip Edilenler</span> <span class="follows-tab-count" id="followsTabFollowingCount">(0)</span>
-          </button>
-        </div>
-        <button type="button" class="btn-close" id="closeFollowsModalBtn" data-action="close-follows-modal" data-i18n-title="close" title="Kapat">
-          <i class="ri-close-line"></i>
-        </button>
-      </div>
-      <div class="follows-modal-body" id="followsModalList">
-        <!-- Dinamik liste yüklenecek -->
-      </div>
-    </div>
-  </div> <!-- /#followsModal -->
-
-  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
   <script src="/i18n.js?v=41"></script>
   <script src="/app.js?v=41"></script>
   <script type="module" src="/community.js?v=41"></script>

@@ -1501,27 +1501,89 @@ body {
   display: flex;
   align-items: center;
   gap: 0.9rem;
+  min-width: 0;
 }
 
 .modal-team.home {
-  justify-content: flex-end;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
   text-align: right;
 }
 
+.modal-team.away {
+  flex-direction: row;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.modal-team-crest,
 .modal-team img {
-  width: 54px;
-  height: 54px;
+  width: 52px;
+  height: 52px;
   object-fit: contain;
+  flex-shrink: 0;
+}
+
+.modal-team-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .modal-team-name {
   font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modal-team-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.modal-team.home .modal-team-meta {
+  justify-content: flex-end;
+}
+
+.modal-team.away .modal-team-meta {
+  justify-content: flex-start;
+}
+
+.modal-team-tag {
+  font-weight: 600;
+}
+
+.modal-team-form {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem;
 }
 
 .modal-score-center {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.modal-match-status-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .modal-score-big {
@@ -7462,49 +7524,123 @@ article.tweet-card.is-pinned {
   .modal-close-row {
     margin-bottom: 0.45rem !important;
     font-size: 0.72rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem !important;
   }
-  .modal-scoreboard-grid,
-  .modal-scoreboard {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
-    gap: 0.35rem !important;
-    padding: 0.4rem 0 !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  .modal-team {
-    min-width: 0 !important;
-    gap: 0.35rem !important;
-    overflow: hidden !important;
-  }
-  .modal-team > div {
-    min-width: 0 !important;
-    overflow: hidden !important;
-  }
-  .modal-team-crest,
-  .modal-team img {
-    width: 32px !important;
-    height: 32px !important;
-    flex-shrink: 0 !important;
-  }
-  .modal-team-name {
-    font-size: 0.78rem !important;
+  #modalMetaText {
     min-width: 0 !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
+    font-size: 0.72rem !important;
+    flex: 1 !important;
+  }
+  .modal-scoreboard-grid,
+  .modal-scoreboard {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 105px minmax(0, 1fr) !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+    padding: 0.35rem 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .modal-team {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    justify-content: flex-start !important;
+    gap: 0.35rem !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .modal-team.home,
+  .modal-team.away {
+    flex-direction: column !important;
+    text-align: center !important;
+    justify-content: flex-start !important;
+  }
+  .modal-team-crest,
+  .modal-team img {
+    width: 44px !important;
+    height: 44px !important;
+    object-fit: contain !important;
+    margin-bottom: 0.1rem !important;
+    flex-shrink: 0 !important;
+  }
+  .modal-team-info {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .modal-team-name {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
+    max-width: 100% !important;
+  }
+  .modal-team-meta {
+    font-size: 0.68rem !important;
+    color: var(--text-secondary) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+    margin-top: 0.15rem !important;
+  }
+  .modal-team.home .modal-team-meta,
+  .modal-team.away .modal-team-meta {
+    justify-content: center !important;
+  }
+  .modal-team-form {
+    font-size: 0.62rem !important;
+    padding: 0.05rem 0.25rem !important;
+    letter-spacing: 0.5px !important;
   }
   .modal-score-center {
     flex-shrink: 0 !important;
-    padding: 0 0.2rem !important;
+    width: 105px !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   .modal-score-center .modal-score-num,
   .modal-score-big {
     font-size: 1.35rem !important;
-    padding: 0.15rem 0.55rem !important;
+    padding: 0.2rem 0.65rem !important;
+    border-radius: 10px !important;
+    letter-spacing: 0.5px !important;
+  }
+  .modal-xg-pill {
+    font-size: 0.66rem !important;
+    padding: 0.15rem 0.45rem !important;
+    gap: 0.35rem !important;
+    margin-top: 0.25rem !important;
+    white-space: nowrap !important;
+  }
+  .modal-match-status-sub {
+    font-size: 0.68rem !important;
+    margin-top: 0.25rem !important;
+    white-space: nowrap !important;
   }
   .modal-scorers-row {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+    grid-template-columns: minmax(0, 1fr) 105px minmax(0, 1fr) !important;
     gap: 0.35rem !important;
     font-size: 0.68rem !important;
     margin-top: 0.45rem !important;

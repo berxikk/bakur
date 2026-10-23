@@ -1866,13 +1866,24 @@ function renderModalHeader() {
     ? `<div class="modal-live-sync-pill"><i class="ri-radar-line"></i> ${t('liveSyncSub') || 'Canlı Veri Akışı Aktif (3.5 sn)'}</div>`
     : '';
 
+  const statusLabel = isStarted
+    ? (isLive ? '' : (t('fullTimeText') || 'Maç Sonucu'))
+    : (ev.status?.description || t('legUpcoming') || 'Yaklaşan Maç');
+
+  const statusLabelHTML = statusLabel
+    ? `<div class="modal-match-status-sub">${statusLabel}</div>`
+    : '';
+
   document.getElementById('modalScoreboard').innerHTML = `
     <div class="modal-team home">
-      <div>
-        <div class="modal-team-name">${ev.homeTeam.name}</div>
-        <div style="font-size: 0.75rem; color: var(--text-secondary);">${t('homeTeamSub')} ${ev.homeTeam.form ? `• Form: ${ev.homeTeam.form}` : ''}</div>
+      <img class="modal-team-crest" src="${homeLogo}" alt="${ev.homeTeam.name}" loading="lazy" />
+      <div class="modal-team-info">
+        <div class="modal-team-name" title="${ev.homeTeam.name}">${ev.homeTeam.name}</div>
+        <div class="modal-team-meta">
+          <span class="modal-team-tag">${t('homeTeamSub')}</span>
+          ${ev.homeTeam.form ? `<span class="modal-team-form">${ev.homeTeam.form}</span>` : ''}
+        </div>
       </div>
-      <img src="${homeLogo}" alt="${ev.homeTeam.name}" />
     </div>
 
     <div class="modal-score-center">
@@ -1881,16 +1892,17 @@ function renderModalHeader() {
       ${xgHTML}
       ${possessionBarHTML}
       ${liveSyncHTML}
-      <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.35rem; font-weight: 600;">
-        ${isStarted ? (isLive ? '' : t('fullTimeText')) : t('ctaUpcomingPrevDetails')}
-      </div>
+      ${statusLabelHTML}
     </div>
 
     <div class="modal-team away">
-      <img src="${awayLogo}" alt="${ev.awayTeam.name}" />
-      <div>
-        <div class="modal-team-name">${ev.awayTeam.name}</div>
-        <div style="font-size: 0.75rem; color: var(--text-secondary);">${t('awayTeamSub')} ${ev.awayTeam.form ? `• Form: ${ev.awayTeam.form}` : ''}</div>
+      <img class="modal-team-crest" src="${awayLogo}" alt="${ev.awayTeam.name}" loading="lazy" />
+      <div class="modal-team-info">
+        <div class="modal-team-name" title="${ev.awayTeam.name}">${ev.awayTeam.name}</div>
+        <div class="modal-team-meta">
+          <span class="modal-team-tag">${t('awayTeamSub')}</span>
+          ${ev.awayTeam.form ? `<span class="modal-team-form">${ev.awayTeam.form}</span>` : ''}
+        </div>
       </div>
     </div>
   `;

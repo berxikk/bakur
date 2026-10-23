@@ -128,18 +128,13 @@ const sanitizeBannerUrl = sanitizeImageUrl;
 
 function avatarHTML(profile, size = 36) {
   const name = profile?.display_name || profile?.username || '?';
-  const cleanUrl = sanitizeAvatarUrl(profile?.avatar_url);
   const palette = ['#059669', '#e11d48', '#0f766e', '#b45309', '#4f46e5', '#0e7490'];
   let h = 0;
   for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const initial = esc(name.charAt(0).toUpperCase() || '?');
   const bg = palette[h % palette.length];
-  const fs = Math.round(size * 0.42);
-
-  if (cleanUrl) {
-    return `<img class="c-avatar" style="width:${size}px;height:${size}px;object-fit:cover;" src="${esc(cleanUrl)}" alt="${esc(name)}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.outerHTML='<span class=\\'c-avatar\\' style=\\'width:${size}px;height:${size}px;background:${bg};font-size:${fs}px\\'>${initial}</span>';" />`;
-  }
-  return `<span class="c-avatar" style="width:${size}px;height:${size}px;background:${bg};font-size:${fs}px">${initial}</span>`;
+  const fs = Math.round(size * 0.44);
+  return `<span class="c-avatar" style="width:${size}px;height:${size}px;background:${bg};font-size:${fs}px;display:inline-flex;align-items:center;justify-content:center;color:#ffffff;font-weight:700;border-radius:50%;user-select:none;flex-shrink:0;">${initial}</span>`;
 }
 
 function catName(cat) {
@@ -995,53 +990,6 @@ async function renderProfilePage(targetUserId) {
 
             ${p.bio ? `<div class="puc-bio">${esc(p.bio)}</div>` : ''}
           </div>
-
-          <!-- İstatistik Şeridi: Gönderi, Takipçi, Takip Edilen, Beğeni -->
-          <div class="puc-stats-grid">
-            <div class="puc-stat-cell">
-              <span class="puc-stat-num">${userPosts.length}</span>
-              <span class="puc-stat-lbl">${T('postsWord')}</span>
-            </div>
-            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${targetId}" data-initial-tab="followers" title="${T('followersTab')}">
-              <span class="puc-stat-num" id="pucFollowersCount">${followersCount}</span>
-              <span class="puc-stat-lbl">${T('followers')}</span>
-            </div>
-            <div class="puc-stat-cell puc-stat-clickable" data-action="open-follows-modal" data-user-id="${targetId}" data-initial-tab="following" title="${T('followingTab')}">
-              <span class="puc-stat-num" id="pucFollowingCount">${followingCount}</span>
-              <span class="puc-stat-lbl">${T('following')}</span>
-            </div>
-            <div class="puc-stat-cell">
-              <span class="puc-stat-num">${totalLikes}</span>
-              <span class="puc-stat-lbl">${T('likes')}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. AYIRICI ÇİZGİ -->
-        <div class="puc-divider"></div>
-
-        <!-- 3. ALT KISIM (AYNI KART İÇİNDE): Kullanıcının Gönderileri -->
-        <div class="puc-posts-section">
-          <div class="puc-posts-header">
-            <div class="puc-tab-item active">
-              <i class="ri-chat-1-line"></i>
-              <span>${isSelf ? T('myPosts') : T('navPosts')} (${userPosts.length})</span>
-            </div>
-          </div>
-          <div class="puc-posts-stream">
-            ${userPosts.length ? userPosts.map((t) => renderUserTweet(t)).join('') : `
-              <div class="puc-empty-box">
-                <i class="ri-chat-new-line" style="font-size:2.5rem; color:var(--amed-green);"></i>
-                <div style="font-weight:700; font-size:1.05rem; margin-top:0.4rem;">${isSelf ? T('profileEmptyPosts') : T('noPostsYetUser')}</div>
-                <div style="color:var(--text-secondary); font-size:0.88rem; margin-top:0.2rem;">${isSelf ? T('profileEmptyPostsCta') : ''}</div>
-                ${isSelf ? `
-                  <button class="c-btn c-btn-primary" style="margin-top:0.8rem;" data-action="goto-forum">
-                    <i class="ri-quill-pen-line"></i> ${T('tweetBtn')}
-                  </button>
-                ` : ''}
-              </div>
-            `}
-          </div>
         </div>
       </div>
     </div>
@@ -1101,26 +1049,16 @@ function renderSettingsPage() {
             </div>
 
             <form class="c-form" id="formProfileMain" novalidate>
-              <input type="hidden" name="avatar_url" id="pageSelectedAvatarInput" value="${esc(p.avatar_url || '')}" />
+              <input type="hidden" name="avatar_url" id="pageSelectedAvatarInput" value="" />
               
-              <!-- Profil Resmi Seçme Alanı -->
-              <div class="avatar-upload-area">
+              <!-- Kullanıcı Monogram Rozeti (Resim yükleme kaldırıldı) -->
+              <div class="avatar-upload-area" style="gap: 1.15rem; align-items: center;">
                 <div class="avatar-preview-wrap" id="pageAvatarPreview">
                   ${avatarHTML(p, 64)}
                 </div>
-                <div class="avatar-upload-controls">
-                  <input type="file" id="pageCustomAvatarFile" accept="image/png, image/jpeg, image/jpg, image/webp" style="display:none;" />
-                  <div class="upload-btn-row">
-                    <button type="button" class="c-btn c-btn-ghost" id="pickPageAvatarBtn">
-                      <i class="ri-upload-cloud-2-line"></i> <span>${T('uploadCustomAvatar')}</span>
-                    </button>
-                    ${p.avatar_url ? `
-                      <button type="button" class="c-btn c-btn-ghost danger-btn" id="removePageAvatarBtn">
-                        <i class="ri-delete-bin-line"></i> ${T('removePhoto')}
-                      </button>
-                    ` : ''}
-                  </div>
-                  <div class="upload-hint"><i class="ri-image-line" style="color:var(--amed-green);"></i> PNG, JPG, WEBP (Maks. 8MB)</div>
+                <div style="font-size:0.84rem; color:var(--text-secondary);">
+                  <strong style="color:var(--text-main); font-size:0.95rem; display:block; margin-bottom:2px;">${esc(p.display_name || p.username || '')}</strong>
+                  <span>Kullanıcı rozetiniz isminizin baş harfinden otomatik oluşturulur.</span>
                 </div>
               </div>
 
@@ -1537,79 +1475,8 @@ async function uploadImageToHosting(file, type = 'avatar') {
 }
 
 function initPageAvatarUploader() {
-  const pickBtn = $('pickPageAvatarBtn');
-  const fileInput = $('pageCustomAvatarFile');
-  const removeBtn = $('removePageAvatarBtn');
-  const inp = $('pageSelectedAvatarInput');
-  const preview = $('pageAvatarPreview');
-
-  if (removeBtn) {
-    removeBtn.addEventListener('click', async () => {
-      if (inp) inp.value = '';
-      const dummyP = { ...(S.profile || {}), avatar_url: null };
-      if (preview) preview.innerHTML = avatarHTML(dummyP, 64);
-      removeBtn.style.display = 'none';
-      if (me()) {
-        try {
-          const { data } = await sb.from('profiles').update({ avatar_url: null }).eq('id', me()).select().single();
-          if (data) {
-            S.profile = data;
-            try { localStorage.setItem('amed_cached_user_profile', JSON.stringify(data)); } catch (_) {}
-            renderHeaderAuth();
-          }
-        } catch (_) {}
-      }
-      toast(T('photoRemovedToast'));
-    });
-  }
-
-  if (pickBtn && fileInput) {
-    pickBtn.addEventListener('click', () => {
-      fileInput.value = '';
-      fileInput.click();
-    });
-
-    fileInput.addEventListener('change', async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      const origHtml = pickBtn.innerHTML;
-      try {
-        pickBtn.disabled = true;
-        pickBtn.innerHTML = `<i class="ri-loader-4-line spin"></i> <span>${T('loading')}</span>`;
-
-        const url = await uploadImageToHosting(file, 'avatar');
-        if (url) {
-          if (inp) inp.value = url;
-          if (preview) {
-            const safeSrc = url.startsWith('data:') ? url : `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
-            preview.innerHTML = `<img class="c-avatar" style="width:64px;height:64px;border:2px solid var(--amed-green);object-fit:cover;" src="${esc(safeSrc)}" alt="Avatar" />`;
-          }
-          if (removeBtn) removeBtn.style.display = 'inline-flex';
-
-          // Profil fotoğrafını beklemeden otomatik olarak Supabase'e kalıcı olarak kaydet
-          if (me()) {
-            try {
-              const { data, error } = await sb.from('profiles').update({ avatar_url: url }).eq('id', me()).select().single();
-              if (!error && data) {
-                S.profile = data;
-                try { localStorage.setItem('amed_cached_user_profile', JSON.stringify(data)); } catch (_) {}
-                renderHeaderAuth();
-                toast(T('saved'));
-              } else {
-                toast(T('photoSelectedToast'));
-              }
-            } catch (_) {
-              toast(T('photoSelectedToast'));
-            }
-          } else {
-            toast(T('photoSelectedToast'));
-          }
-        }
-      } catch (err) {
-        if (err.message !== 'Kırpma işlemi iptal edildi.') {
-          toast(T('imageUploadFailed'), 'err');
-        }
+  // Kullanıcı resimleri ve görsel yükleme tamamen kaldırıldı; standart monogram kullanılır.
+}
       } finally {
         pickBtn.disabled = false;
         pickBtn.innerHTML = origHtml;
@@ -1753,18 +1620,7 @@ async function loadCategories() {
 }
 
 async function loadOfficialClubPosts() {
-  if (window.__INITIAL_CLUB_FEED__?.posts && S.officialPosts.length === 0) {
-    S.officialPosts = window.__INITIAL_CLUB_FEED__.posts;
-  }
-  try {
-    const res = await fetch('/api/live-club-posts');
-    if (res.ok) {
-      const data = await res.json();
-      S.officialPosts = data.posts || [];
-    }
-  } catch (err) {
-    console.error('Live club posts fetch error:', err);
-  }
+  S.officialPosts = [];
 }
 
 async function loadThreads() {
@@ -1808,7 +1664,7 @@ async function loadThreads() {
     }
   };
 
-  await Promise.all([fetchSupabase(), loadOfficialClubPosts(), fetchMyPosts()]);
+  await Promise.all([fetchSupabase(), fetchMyPosts()]);
 }
 
 async function loadMyThreadLikes(ids) {

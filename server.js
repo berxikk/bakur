@@ -338,149 +338,6 @@ function findLiveStatsForPlayer(pName, statMap) {
   return { goals: 0, assists: 0, yellowCards: 0, redCards: 0, appearances: 0 };
 }
 
-// Amedspor Resmi Web Sitesi Canlı Açıklama & Haber Kazıyıcı (Gerçek Veri)
-let liveClubFeedCache = { timestamp: 0, data: null };
-
-function cleanScrapedText(t) {
-  return (t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-async function getLiveClubFeed() {
-  const now = Date.now();
-  if (liveClubFeedCache.data && now - liveClubFeedCache.timestamp < 10 * 60 * 1000) {
-    return liveClubFeedCache.data;
-  }
-
-  try {
-    const [resStatements, resNews] = await Promise.all([
-      fetch('https://www.amedspor.com.tr/club/statements', { headers: HEADERS }).then((r) => r.text()).catch(() => ''),
-      fetch('https://www.amedspor.com.tr/news', { headers: HEADERS }).then((r) => r.text()).catch(() => '')
-    ]);
-
-    const posts = [];
-
-    // 1. Resmi Kulüp Duyuruları (Statements)
-    if (resStatements) {
-      const stmtMatches = [...resStatements.matchAll(/<article[\s\S]*?<\/article>/gi)];
-      for (const m of stmtMatches) {
-        const raw = m[0];
-        const linkMatch = raw.match(/href="([^"]+)"/i);
-        const titleMatch =
-          raw.match(/<h[2-4][^>]*>([\s\S]*?)<\/h[2-4]>/i) ||
-          raw.match(/class="[^"]*font-semibold[^"]*"[^>]*>([\s\S]*?)<\/[a-z0-9]+>/i);
-        const dateMatch = raw.match(/(\d{1,2}\s+[A-Za-zÇŞĞÜÖİçşğüöı]+\s+\d{4}(?:,\s+\d{2}:\d{2})?)/i);
-        const pMatch = raw.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-
-        const title = titleMatch ? cleanScrapedText(titleMatch[1]) : '';
-        const date = dateMatch ? cleanScrapedText(dateMatch[1]) : '';
-        const content = pMatch ? cleanScrapedText(pMatch[1]) : title;
-        const link =
-          linkMatch && !linkMatch[1].includes('email-protection')
-            ? linkMatch[1].startsWith('http')
-              ? linkMatch[1]
-              : `https://www.amedspor.com.tr${linkMatch[1]}`
-            : 'https://www.amedspor.com.tr/club/statements';
-
-        if (title) {
-          posts.push({
-            id: 'club-stmt-' + posts.length,
-            platform: 'announcement',
-            badge: 'Resmi Kulüp Duyurusu',
-            author: {
-              name: 'Amedspor Kulübü',
-              handle: '@amedskofficial',
-              avatar: '/logos/132335.png',
-              verified: true,
-              role: 'official'
-            },
-            createdAt: date,
-            title,
-            content: content && content !== title ? `${title}\n\n${content}` : title,
-            url: link,
-            media: null,
-            isOfficial: true
-          });
-        }
-      }
-    }
-
-    // 2. Kulüp Haberleri & Transferler (News)
-    if (resNews) {
-      const newsMatches = [...resNews.matchAll(/<article[\s\S]*?<\/article>/gi)];
-      for (const m of newsMatches) {
-        const raw = m[0];
-        const linkMatch = raw.match(/href="([^"]+)"/i);
-        const imgMatch = raw.match(/<img[^>]+src="([^"]+)"/i);
-        const titleMatch =
-          raw.match(/<h[2-4][^>]*>([\s\S]*?)<\/h[2-4]>/i) ||
-          raw.match(/alt="([^"]+)"/i);
-        const pMatch = raw.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
-        const dateMatch = raw.match(/(\d{1,2}\s+[A-Za-zÇŞĞÜÖİçşğüöı]+(?:\s+\d{4})?)/i);
-
-        const title = titleMatch ? cleanScrapedText(titleMatch[1]) : '';
-        const content = pMatch ? cleanScrapedText(pMatch[1]) : title;
-        const date = dateMatch ? cleanScrapedText(dateMatch[1]) : '';
-        const link = linkMatch
-          ? linkMatch[1].startsWith('http')
-            ? linkMatch[1]
-            : `https://www.amedspor.com.tr${linkMatch[1]}`
-          : 'https://www.amedspor.com.tr/news';
-        const image = imgMatch ? imgMatch[1] : null;
-
-        if (title) {
-          posts.push({
-            id: 'club-news-' + posts.length,
-            platform: 'news',
-            badge: 'Kulüp Haberi',
-            author: {
-              name: 'Amedspor Kulübü',
-              handle: '@amedskofficial',
-              avatar: '/logos/132335.png',
-              verified: true,
-              role: 'official'
-            },
-            createdAt: date,
-            title,
-            content: content && content !== title ? `${title}\n\n${content}` : title,
-            url: link,
-            media: image ? { type: 'image', url: image } : null,
-            isOfficial: true
-          });
-        }
-      }
-    }
-
-    const payload = {
-      officialAccounts: {
-        twitter: {
-          name: 'Amedspor',
-          handle: '@amedskofficial',
-          url: 'https://x.com/amedskofficial',
-          avatar: '/logos/132335.png',
-          verified: true
-        },
-        instagram: {
-          name: 'amedsk',
-          handle: '@amedsk',
-          url: 'https://instagram.com/amedsk',
-          avatar: '/logos/132335.png',
-          verified: true
-        }
-      },
-      posts
-    };
-
-    if (posts.length > 0) {
-      liveClubFeedCache = { timestamp: now, data: payload };
-    }
-    return liveClubFeedCache.data || payload;
-  } catch (err) {
-    console.error('getLiveClubFeed error:', err);
-    return liveClubFeedCache.data || { officialAccounts: {}, posts: [] };
-  }
-}
-
-
 // Bellek İçi Hızlı Önbellek
 const cache = new Map();
 async function fetchJson(url, ttlMs = 12000) {
@@ -1678,10 +1535,8 @@ async function getSquadData(forceRefresh = false) {
 // Sunucu başlangıcında ve arka planda sürekli hazır tut (0ms gecikme)
 getDashboardData();
 getSquadData();
-getLiveClubFeed();
 setInterval(() => getDashboardData(true), 25000).unref();
 setInterval(() => getSquadData(true), 120000).unref();
-setInterval(getLiveClubFeed, 600000).unref();
 
 const server = http.createServer(async (req, res) => {
   res.req = req;
@@ -2022,12 +1877,6 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // Amedspor Resmi Kulüp Duyuruları & Haberleri (Canlı Web Sitesi Kazıma)
-  if (pathname === '/api/live-club-posts' || pathname === '/api/social-feed') {
-    const data = await getLiveClubFeed();
-    return sendJson(res, data);
-  }
-
   // Banner yükleme özelliği devre dışı bırakılmıştır
   if (req.method === 'POST' && pathname === '/api/upload-banner') {
     return sendJson(res, { error: 'Banner yükleme özelliği devre dışı bırakılmıştır.' }, 403);
@@ -2322,7 +2171,6 @@ async function uploadToExternalImageHost(buffer, ext) {
   <script id="__AMED_BOOTSTRAP_STATE__">
     window.__INITIAL_DATA__ = ${safeJsonSerialize(cachedDashboard)};
     window.__INITIAL_SQUAD__ = ${safeJsonSerialize(cachedSquad)};
-    window.__INITIAL_CLUB_FEED__ = ${safeJsonSerialize(liveClubFeedCache?.data || null)};
   </script>`;
       const outputHtml = htmlContent.replace('</head>', `${injectionScript}\n</head>`);
       const acceptEncoding = (req.headers['accept-encoding'] || '');
