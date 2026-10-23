@@ -14,6 +14,7 @@ let appState = {
   playerSearch: '',
   squadViewMode: 'grid',
   selectedRound: null,
+  userManuallySelectedRound: false,
   activeModalEventId: null,
   activeModalData: null,
   activeModalTab: 'summary',
@@ -393,8 +394,16 @@ async function fetchDashboard() {
       localStorage.setItem('amed_cached_dashboard', JSON.stringify(data));
     } catch (e) {}
 
-    if (!appState.selectedRound) {
-      appState.selectedRound = data.rounds?.currentRound || 8;
+    const serverRound = data.rounds?.currentRound;
+    if (!appState.userManuallySelectedRound && serverRound) {
+      if (appState.selectedRound !== serverRound) {
+        appState.selectedRound = serverRound;
+        if (data.currentRoundMatches?.length) {
+          appState.roundEvents = data.currentRoundMatches;
+        }
+      }
+    } else if (!appState.selectedRound) {
+      appState.selectedRound = serverRound || 9;
     }
 
     // Yalnızca veri gerçekten değiştiğinde renderAll() çağır! (DOM Thrashing & Stutter Kesin Çözümü)
@@ -769,9 +778,9 @@ function buildMiniStatBar(label, homeStr, awayStr) {
   return `
     <div class="mini-stat-item">
       <div class="mini-stat-top">
-        <span class="mini-stat-val">${homeStr}</span>
+        <span class="mini-stat-val home">${homeStr}</span>
         <span class="mini-stat-lbl">${label}</span>
-        <span class="mini-stat-val">${awayStr}</span>
+        <span class="mini-stat-val away">${awayStr}</span>
       </div>
       <div class="stat-bars" style="height: 6px;">
         <div class="stat-bar-side home">
@@ -1446,15 +1455,15 @@ function renderSquad() {
 
     kpiEl.innerHTML = `
       <div class="squad-kpi-card">
-        <div class="squad-kpi-icon val"><i class="ri-money-euro-circle-line"></i></div>
+        <div class="squad-kpi-icon"><i class="ri-money-euro-circle-line"></i></div>
         <div class="squad-kpi-info">
           <span class="squad-kpi-label">${t('squadKpiTotalVal')}</span>
-          <span class="squad-kpi-val" style="color:var(--amed-green);">${formatMarketValue(totalVal)}</span>
+          <span class="squad-kpi-val">${formatMarketValue(totalVal)}</span>
           <span class="squad-kpi-sub">${t('squadKpiSubAmed')}</span>
         </div>
       </div>
       <div class="squad-kpi-card">
-        <div class="squad-kpi-icon count"><i class="ri-team-line"></i></div>
+        <div class="squad-kpi-icon"><i class="ri-team-line"></i></div>
         <div class="squad-kpi-info">
           <span class="squad-kpi-label">${t('squadKpiCount')}</span>
           <span class="squad-kpi-val">${players.length} ${t('playerWord')}</span>
@@ -1462,7 +1471,7 @@ function renderSquad() {
         </div>
       </div>
       <div class="squad-kpi-card">
-        <div class="squad-kpi-icon age"><i class="ri-calendar-line"></i></div>
+        <div class="squad-kpi-icon"><i class="ri-calendar-line"></i></div>
         <div class="squad-kpi-info">
           <span class="squad-kpi-label">${t('squadKpiAvgAge')}</span>
           <span class="squad-kpi-val">${avgAge} ${t('ageWord')}</span>
@@ -1470,11 +1479,11 @@ function renderSquad() {
         </div>
       </div>
       <div class="squad-kpi-card">
-        <div class="squad-kpi-icon mvp"><i class="ri-vip-crown-line"></i></div>
+        <div class="squad-kpi-icon"><i class="ri-vip-crown-line"></i></div>
         <div class="squad-kpi-info">
           <span class="squad-kpi-label">${t('squadKpiMvp')}</span>
           <span class="squad-kpi-val">${mvpPlayer ? mvpPlayer.name : '—'}</span>
-          <span class="squad-kpi-sub" style="color:var(--amed-red); font-weight:700;">${mvpPlayer ? formatMarketValue(mvpPlayer.marketValue) : ''}</span>
+          <span class="squad-kpi-sub" style="color:var(--amed-green); font-weight:700;">${mvpPlayer ? formatMarketValue(mvpPlayer.marketValue) : ''}</span>
         </div>
       </div>
     `;
@@ -1488,28 +1497,28 @@ function renderSquad() {
     const topVal = [...players].sort((a, b) => (b.marketValue || 0) - (a.marketValue || 0))[0];
 
     spotEl.innerHTML = `
-      <div class="squad-spotlight-card scorer">
-        <div class="spotlight-badge-icon scorer"><i class="ri-football-line"></i></div>
+      <div class="squad-spotlight-card">
+        <div class="spotlight-badge-icon"><i class="ri-football-line"></i></div>
         <div class="spotlight-meta">
           <div class="spotlight-title">${t('squadSpotTopScorer')}</div>
           <div class="spotlight-player">${topScorer ? `${topScorer.name} (#${topScorer.jerseyNumber || '—'})` : t('squadNoGoalsYet')}</div>
           <div class="spotlight-stat">${topScorer ? `⚽ ${topScorer.goals} ${t('goalWord')}` : ''}</div>
         </div>
       </div>
-      <div class="squad-spotlight-card assist">
-        <div class="spotlight-badge-icon assist"><i class="ri-magic-line"></i></div>
+      <div class="squad-spotlight-card">
+        <div class="spotlight-badge-icon"><i class="ri-magic-line"></i></div>
         <div class="spotlight-meta">
           <div class="spotlight-title">${t('squadSpotTopAssist')}</div>
           <div class="spotlight-player">${topAssist ? `${topAssist.name} (#${topAssist.jerseyNumber || '—'})` : t('squadNoAssistsYet')}</div>
           <div class="spotlight-stat">${topAssist ? `🪄 ${topAssist.assists} ${t('assistWord')}` : ''}</div>
         </div>
       </div>
-      <div class="squad-spotlight-card mvp">
-        <div class="spotlight-badge-icon mvp"><i class="ri-gemini-line"></i></div>
+      <div class="squad-spotlight-card">
+        <div class="spotlight-badge-icon"><i class="ri-vip-diamond-line"></i></div>
         <div class="spotlight-meta">
           <div class="spotlight-title">${t('squadSpotMvp')}</div>
           <div class="spotlight-player">${topVal ? `${topVal.name} (#${topVal.jerseyNumber || '—'})` : '—'}</div>
-          <div class="spotlight-stat">${topVal ? `💎 ${formatMarketValue(topVal.marketValue)}` : ''}</div>
+          <div class="spotlight-stat">${topVal ? formatMarketValue(topVal.marketValue) : ''}</div>
         </div>
       </div>
     `;
@@ -1626,10 +1635,10 @@ function renderSquad() {
         if (hasStats) {
           statsHtml = `
             <div class="player-performance-strip">
-              ${goals > 0 ? `<span class="pstat-pill goal" title="${goals} Gol"><i class="ri-football-line"></i> ${goals} ${t('goalWord') || 'Gol'}</span>` : ''}
-              ${assists > 0 ? `<span class="pstat-pill assist" title="${assists} Asist"><i class="ri-magic-line"></i> ${assists} ${t('assistWord') || 'Asist'}</span>` : ''}
-              ${yellowCards > 0 ? `<span class="pstat-pill yellow-card" title="${yellowCards} Sarı"><span class="mini-card-icon yellow"></span> ${yellowCards} ${t('yellowCard') || 'Sarı'}</span>` : ''}
-              ${redCards > 0 ? `<span class="pstat-pill red-card" title="${redCards} Kırmızı"><span class="mini-card-icon red"></span> ${redCards} ${t('redCard') || 'Kırmızı'}</span>` : ''}
+              ${goals > 0 ? `<span class="pstat-pill"><i class="ri-football-line"></i> ${goals} ${t('goalWord') || 'Gol'}</span>` : ''}
+              ${assists > 0 ? `<span class="pstat-pill"><i class="ri-magic-line"></i> ${assists} ${t('assistWord') || 'Asist'}</span>` : ''}
+              ${yellowCards > 0 ? `<span class="pstat-pill"><span class="mini-card-icon yellow"></span> ${yellowCards}</span>` : ''}
+              ${redCards > 0 ? `<span class="pstat-pill"><span class="mini-card-icon red"></span> ${redCards}</span>` : ''}
             </div>
           `;
         }
@@ -1637,30 +1646,30 @@ function renderSquad() {
         return `
           <div class="player-card">
             <div class="player-top">
-              <div class="player-shirt-circle ${posLower}">
+              <div class="player-shirt-circle pos-circle-${posLower}">
                 #${p.jerseyNumber || '—'}
               </div>
-              <div style="min-width:0; flex:1;">
+              <div class="player-title-col">
                 <div class="player-name">${p.name}</div>
                 <div class="player-pos-row">
-                  <span class="pos-tag pos-${posLower}"><i class="${posInfo.icon}"></i> ${p.positionDetail || posInfo.name}</span>
+                  <span class="pos-tag pos-${posLower}">${p.positionDetail || posInfo.name}</span>
                   ${natHtml}
                 </div>
               </div>
             </div>
 
             <div class="player-metrics">
-              <div>
+              <div class="player-metric-col">
                 <div class="player-metric-label">${t('ageHeightLbl')}</div>
-                <div class="player-metric-val">${p.age ? `${p.age} ${t('ageWord')}` : '—'} ${p.height ? `• ${p.height}cm` : ''}</div>
+                <div class="player-metric-val">${p.age ? `${p.age}` : '—'} ${p.height ? `• ${p.height}cm` : ''}</div>
               </div>
-              <div>
+              <div class="player-metric-col">
                 <div class="player-metric-label">${t('footLbl')}</div>
                 <div class="player-metric-val">${trFoot(p.preferredFoot)}</div>
               </div>
-              <div>
+              <div class="player-metric-col val">
                 <div class="player-metric-label">${t('marketValLbl')}</div>
-                <div class="player-metric-val" style="color: var(--amed-green);">${formatMarketValue(p.marketValue)}</div>
+                <div class="player-metric-val player-val-green">${formatMarketValue(p.marketValue)}</div>
               </div>
             </div>
 
@@ -1923,9 +1932,9 @@ function buildStatRowHTML(s) {
   return `
     <div class="stat-row">
       <div class="stat-header">
-        <span class="stat-val">${s.home}</span>
+        <span class="stat-val home">${s.home}</span>
         <span class="stat-label">${labelTranslated}</span>
-        <span class="stat-val">${s.away}</span>
+        <span class="stat-val away">${s.away}</span>
       </div>
       <div class="stat-bars">
         <div class="stat-bar-side home">
@@ -2460,9 +2469,9 @@ function renderModalBody() {
 
     container.innerHTML = `
       ${filterButtonsHTML}
-      <div style="margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary);">
+      <div class="stats-summary-meta">
         <span><i class="ri-checkbox-multiple-line" style="color: var(--amed-green);"></i> <strong>${allStats.length}</strong> ${t('detailedLiveStats')}</span>
-        <span style="font-weight: 700;"><span style="color: var(--amed-green);">■ ${ev.homeTeam?.name}</span> &nbsp;|&nbsp; <span style="color: var(--amed-red);">■ ${ev.awayTeam?.name}</span></span>
+        <span class="stats-teams-tag"><span style="color: var(--amed-green);">■ ${ev.homeTeam?.name}</span> &nbsp;|&nbsp; <span style="color: var(--amed-red);">■ ${ev.awayTeam?.name}</span></span>
       </div>
       <div class="stats-category-grid">
         ${categoryCardsHTML}
@@ -3027,16 +3036,23 @@ function initApp() {
     });
   });
 
-  // Hafta Seçici
+  // Hafta Seçici (Kullanıcı manuel tıkladığında işaretle, aksi halde tarihe göre otomatik güncel haftaya geç)
   document.getElementById('roundSelect')?.addEventListener('change', (e) => {
+    appState.userManuallySelectedRound = true;
     loadRoundMatches(Number(e.target.value));
   });
   document.getElementById('prevRoundBtn')?.addEventListener('click', () => {
-    if (appState.selectedRound > 1) loadRoundMatches(appState.selectedRound - 1);
+    if (appState.selectedRound > 1) {
+      appState.userManuallySelectedRound = true;
+      loadRoundMatches(appState.selectedRound - 1);
+    }
   });
   document.getElementById('nextRoundBtn')?.addEventListener('click', () => {
-    const maxR = appState.data?.rounds?.allRounds?.length || 16;
-    if (appState.selectedRound < maxR) loadRoundMatches(appState.selectedRound + 1);
+    const maxR = appState.data?.rounds?.allRounds?.length || 19;
+    if (appState.selectedRound < maxR) {
+      appState.userManuallySelectedRound = true;
+      loadRoundMatches(appState.selectedRound + 1);
+    }
   });
 
   // Modal Kapatma ve Sekmeler

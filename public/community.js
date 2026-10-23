@@ -1450,6 +1450,22 @@ function showCropDialog(dataUri, type = 'avatar') {
   });
 }
 
+function dataURItoBlob(dataURI) {
+  try {
+    const parts = dataURI.split(',');
+    const byteString = atob(parts[1]);
+    const mimeString = parts[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+  } catch (_) {
+    return null;
+  }
+}
+
 /**
  * Resim Yükleme ve Kırpma Fonksiyonu (Online NSFW denetimi arkaplanda sessizce çalışır)
  */
@@ -1481,7 +1497,32 @@ async function uploadImageToHosting(file, type = 'avatar') {
     console.warn('NSFW kontrolü atlandı:', nsfwErr);
   }
 
-  // 4. Sunucuya yükle (Profil resmi avatars dizinine gider)
+  // 4. Doğrudan Supabase Storage Yüklemesi (Kullanıcı 'avatars' bucket'ı oluşturmuşsa doğrudan Supabase Storage kullanılır)
+  if (type === 'avatar' && me()) {
+    try {
+      const blob = dataURItoBlob(dataUri);
+      if (blob) {
+        const filePath = `${me()}_${Date.now()}.webp`;
+        const { data: stData, error: stErr } = await sb.storage
+          .from('avatars')
+          .upload(filePath, blob, {
+            contentType: 'image/webp',
+            upsert: true
+          });
+
+        if (!stErr && stData) {
+          const { data: pubData } = sb.storage.from('avatars').getPublicUrl(filePath);
+          if (pubData?.publicUrl) {
+            return pubData.publicUrl;
+          }
+        }
+      }
+    } catch (stEx) {
+      console.warn('Supabase Storage yükleme denemesi:', stEx);
+    }
+  }
+
+  // 5. Sunucuya yükle (Yedek: Doğrudan optimize edilmiş kalıcı Data URI)
   const uploadRes = await fetch('/api/upload-image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

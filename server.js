@@ -560,7 +560,7 @@ const SUPERLIG_WEEKS = [
   { round: 5, days: ['20260911', '20260912', '20260913', '20260914'], label: '5. Hafta (11-14 Eyl)' },
   { round: 6, days: ['20260918', '20260919', '20260920'], label: '6. Hafta (18-20 Eyl)' },
   { round: 7, days: ['20261009', '20261010', '20261011', '20261012'], label: '7. Hafta (9-12 Eki)' },
-  { round: 8, days: ['20261016', '20261017', '20261018', '20261019'], label: '8. Hafta (16-19 Eki) • Güncel' },
+  { round: 8, days: ['20261016', '20261017', '20261018', '20261019'], label: '8. Hafta (16-19 Eki)' },
   { round: 9, days: ['20261023', '20261024', '20261025', '20261026'], label: '9. Hafta (23-26 Eki)' },
   { round: 10, days: ['20261030', '20261031', '20261101', '20261102'], label: '10. Hafta (30 Eki-2 Kas)' },
   { round: 11, days: ['20261106', '20261107', '20261108'], label: '11. Hafta (6-8 Kas)' },
@@ -568,8 +568,35 @@ const SUPERLIG_WEEKS = [
   { round: 13, days: ['20261127', '20261128', '20261129', '20261130'], label: '13. Hafta (27-30 Kas)' },
   { round: 14, days: ['20261204', '20261205', '20261206', '20261207'], label: '14. Hafta (4-7 Ara)' },
   { round: 15, days: ['20261211', '20261212', '20261213', '20261214'], label: '15. Hafta (11-14 Ara)' },
-  { round: 16, days: ['20261218', '20261219', '20261220', '20261221'], label: '16. Hafta (18-21 Ara)' }
+  { round: 16, days: ['20261218', '20261219', '20261220', '20261221'], label: '16. Hafta (18-21 Ara)' },
+  { round: 17, days: ['20261225', '20261226', '20261227', '20261228'], label: '17. Hafta (25-28 Ara)' },
+  { round: 18, days: ['20270108', '20270109', '20270110', '20270111'], label: '18. Hafta (8-11 Oca)' },
+  { round: 19, days: ['20270115', '20270116', '20270117', '20270118'], label: '19. Hafta (15-18 Oca)' }
 ];
+
+// Aktif Süper Lig Haftasını Tarihe Göre Otomatik Belirle (Hafta bittiğinde kendiliğinden yeni haftaya geçer)
+function getCurrentSuperligWeek() {
+  const trDate = new Date(Date.now() + 3 * 3600 * 1000); // Türkiye Saati (UTC+3)
+  const y = trDate.getUTCFullYear();
+  const m = String(trDate.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(trDate.getUTCDate()).padStart(2, '0');
+  const todayStr = `${y}${m}${d}`;
+
+  // 1. Bugünü gün listesinde içeren hafta
+  const directMatch = SUPERLIG_WEEKS.find(w => Array.isArray(w.days) && w.days.includes(todayStr));
+  if (directMatch) return directMatch;
+
+  // 2. Hafta maçları bitmişse (son günü bugünden küçükse), son günü bugünden büyük veya eşit olan ilk hafta (aktif/sıradaki hafta)
+  const nextWeek = SUPERLIG_WEEKS.find(w => {
+    if (!Array.isArray(w.days) || w.days.length === 0) return false;
+    const lastDay = w.days[w.days.length - 1];
+    return lastDay >= todayStr;
+  });
+  if (nextWeek) return nextWeek;
+
+  // 3. Fallback: Sezon sonu ise son hafta, sezon öncesi ise ilk hafta
+  return SUPERLIG_WEEKS[SUPERLIG_WEEKS.length - 1] || SUPERLIG_WEEKS[0];
+}
 
 async function fetchWeekMatches(weekObj, ttlMs = 12000) {
   const results = await Promise.all(
@@ -1370,7 +1397,7 @@ async function getDashboardData(forceRefresh = false) {
 
   updatingDashboardPromise = (async () => {
     try {
-      const currentWeekObj = SUPERLIG_WEEKS[7]; // 8. Hafta
+      const currentWeekObj = getCurrentSuperligWeek(); // Tarihe göre otomatik güncel hafta
       const fastTtl = hasLiveMatch ? 2000 : 4000;
       const [pastSchedule, futureSchedule, standingsData, currentRoundMatches] = await Promise.all([
         fetchJson(`${ESPN_SITE_BASE}/teams/${AMED_ESPN_ID}/schedule`, fastTtl),
@@ -1702,7 +1729,7 @@ const server = http.createServer(async (req, res) => {
     if (isNaN(roundNum) || roundNum < 1 || roundNum > 38) {
       return sendJson(res, { error: 'Geçersiz hafta numarası (1-38 arasında olmalı)' }, 400);
     }
-    const weekObj = SUPERLIG_WEEKS.find(w => w.round === roundNum) || SUPERLIG_WEEKS[7];
+    const weekObj = SUPERLIG_WEEKS.find(w => w.round === roundNum) || getCurrentSuperligWeek();
     const events = await fetchWeekMatches(weekObj, 15000);
     return sendJson(res, {
       round: weekObj.round,
